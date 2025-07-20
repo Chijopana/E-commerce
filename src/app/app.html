@@ -1,0 +1,25 @@
+<mat-toolbar color="primary">
+  <button mat-button (click)="setView('home')" [disabled]="currentView === 'home'">
+    <mat-icon>home</mat-icon>
+    Inicio
+  </button>
+  <button mat-button (click)="setView('products')" [disabled]="currentView === 'products'">
+    <mat-icon>storefront</mat-icon>
+    Productos
+  </button>
+  <button mat-button (click)="setView('cart')" [disabled]="currentView === 'cart'">
+    <mat-icon>shopping_cart</mat-icon>
+    Carrito
+  </button>
+  <button mat-button (click)="setView('checkout')" [disabled]="currentView === 'checkout'">
+    <mat-icon>payment</mat-icon>
+    Checkout
+  </button>
+</mat-toolbar>
+
+<div style="padding: 16px;">
+  <app-home *ngIf="currentView === 'home'"></app-home>
+  <app-products *ngIf="currentView === 'products'"></app-products>
+  <app-cart *ngIf="currentView === 'cart'"></app-cart>
+  <app-checkout *ngIf="currentView === 'checkout'"></app-checkout>
+</div>

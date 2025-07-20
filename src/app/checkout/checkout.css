@@ -1,0 +1,18 @@
+mat-form-field {
+  width: 100%;
+}
+
+mat-card {
+  max-width: 600px;
+  margin: auto;
+}
+
+.summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.summary li {
+  padding: 4px 0;
+}

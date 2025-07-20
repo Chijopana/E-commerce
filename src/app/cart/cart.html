@@ -1,0 +1,37 @@
+<mat-card class="cart-container" *ngIf="cartItems.length > 0; else emptyCart">
+  <mat-card-title>Tu carrito</mat-card-title>
+  <mat-divider></mat-divider>
+
+  <div *ngFor="let item of cartItems" class="cart-item">
+    <img [src]="item.image" [alt]="item.name" class="product-image" />
+    <div class="item-details">
+      <h3>{{ item.name }}</h3>
+      <p>Cantidad: {{ item.quantity }}</p>
+      <p>Precio: {{ item.price | currency:'EUR' }}</p>
+      <p><strong>Subtotal:</strong> {{ item.price * item.quantity | currency:'EUR' }}</p>
+      <button mat-icon-button color="warn" (click)="removeItem(item.id)" aria-label="Eliminar producto">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="cart-total">
+    <p><strong>Total:</strong> {{ total | currency:'EUR' }}</p>
+  </div>
+
+  <div class="cart-actions">
+    <button mat-stroked-button color="warn" (click)="clearCart()">Vaciar Carrito</button>
+    <button mat-flat-button color="primary">Ir al Checkout</button>
+  </div>
+</mat-card>
+
+<ng-template #emptyCart>
+  <mat-card class="empty-cart">
+    <mat-card-title>Tu carrito está vacío</mat-card-title>
+    <mat-card-content>
+      <p>¡Agrega productos para comenzar tu compra!</p>
+    </mat-card-content>
+  </mat-card>
+</ng-template>

@@ -1,0 +1,21 @@
+<div class="products-grid">
+  <mat-card *ngFor="let product of products" class="product-card">
+    <img mat-card-image [src]="product.image" [alt]="product.name" />
+    <mat-card-header>
+      <mat-card-title>{{ product.name }}</mat-card-title>
+      <mat-card-subtitle>{{ product.price | currency:'EUR' }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="description">{{ product.description }}</p>
+      <p class="stock" [class.low-stock]="product.stock < 5">
+        <mat-icon inline>inventory_2</mat-icon> Stock: {{ product.stock }}
+      </p>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button color="primary" (click)="addToCart(product)" [attr.aria-label]="'Añadir ' + product.name + ' al carrito'">
+        <mat-icon>add_shopping_cart</mat-icon>
+        Añadir al carrito
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

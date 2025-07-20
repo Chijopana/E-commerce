@@ -1,0 +1,57 @@
+<mat-card>
+  <mat-card-title>Información de envío</mat-card-title>
+  <form [formGroup]="form" (ngSubmit)="submitOrder()" style="display: grid; gap: 16px;">
+    <mat-form-field appearance="fill">
+      <mat-label>Nombre completo</mat-label>
+      <input matInput formControlName="name" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" type="email" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Dirección</mat-label>
+      <input matInput formControlName="address" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Ciudad</mat-label>
+      <input matInput formControlName="city" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Código postal</mat-label>
+      <input matInput formControlName="postalCode" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>País</mat-label>
+      <input matInput formControlName="country" required />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Método de pago</mat-label>
+      <mat-select formControlName="paymentMethod">
+        <mat-option value="card">Tarjeta de crédito</mat-option>
+        <mat-option value="paypal">PayPal</mat-option>
+        <mat-option value="cash">Pago contra entrega</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-card class="summary" style="margin-top: 24px;">
+      <mat-card-title>Resumen del pedido</mat-card-title>
+      <ul>
+        <li *ngFor="let item of cartItems">
+          {{ item.name }} x{{ item.quantity }} = {{ item.price * item.quantity | currency:'EUR' }}
+        </li>
+      </ul>
+      <p><strong>Total:</strong> {{ total | currency:'EUR' }}</p>
+    </mat-card>
+
+    <button mat-raised-button color="primary" type="submit">
+      Confirmar Pedido
+    </button>
+  </form>
+</mat-card>
