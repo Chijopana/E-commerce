@@ -1,41 +1,66 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
+import { CartService, CartItem } from '../services/cart.service';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [
-    CommonModule,
-    CurrencyPipe,
-    MatCardModule,
-    MatListModule,
-    MatButtonModule,
-    MatIconModule,
-    MatDividerModule,
-  ],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, CurrencyPipe],
   templateUrl: './cart.html',
-  styleUrls: ['./cart.css']
+  styleUrls: ['./cart.css'],
 })
 export class Cart {
-  cartItems = [
-    { id: 1, name: 'Producto 1', price: 49.99, quantity: 2, image: 'https://via.placeholder.com/100' },
-    { id: 2, name: 'Producto 2', price: 79.99, quantity: 1, image: 'https://via.placeholder.com/100' },
-  ];
+  @Input() setCurrentView: (view: 'home' | 'products' | 'cart' | 'checkout') => void = () => {};
 
-  removeItem(id: number) {
-    this.cartItems = this.cartItems.filter(item => item.id !== id);
+  cartItems: CartItem[] = [];
+
+  constructor(private cartService: CartService) {
+    this.cartService.cart$.subscribe(items => {
+      this.cartItems = items;
+    });
+  }
+
+  increaseQuantity(item: CartItem) {
+    this.cartService.addToCart(item);
+  }
+
+  decreaseQuantity(item: CartItem) {
+    if (item.quantity > 1) {
+      this.cartService.updateQuantity(item.id, item.quantity - 1);
+    } else {
+      this.removeItem(item);
+    }
+  }
+
+  removeItem(item: CartItem) {
+    this.cartService.removeFromCart(item.id);
   }
 
   clearCart() {
-    this.cartItems = [];
+    this.cartService.clearCart();
   }
 
-  get total() {
+  getTotal(): number {
     return this.cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }
+
+  goToCheckout() {
+    if (this.setCurrentView) {
+      this.setCurrentView('checkout');
+    }
+  }
+
+  updateQuantity(id: number, quantity: number) {
+    const item = this.cartItems.find(i => i.id === id);
+    if (!item) return;
+
+    if (quantity <= 0) {
+      this.removeItem(item);
+    } else {
+      this.cartService.updateQuantity(id, quantity);
+    }
   }
 }

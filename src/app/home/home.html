@@ -1,46 +1,33 @@
-<div class="home-container">
-  <mat-card class="welcome-card">
-    <mat-card-header>
-      <mat-card-title>Bienvenido a Mini E-Commerce</mat-card-title>
-      <mat-card-subtitle>Tu tienda online de confianza</mat-card-subtitle>
-    </mat-card-header>
+<div class="home-hero">
+  <div class="hero-text">
+    <h1>Bienvenido a Mini E-Commerce</h1>
+    <p>Tu tienda online de confianza con productos de calidad y ofertas exclusivas.</p>
+    <button mat-raised-button color="primary" (click)="navigateToProducts()" class="cta-button">
+      Ver productos
+    </button>
+  </div>
+  <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80" alt="Tienda online" class="hero-image" />
+</div>
+
+<div class="features-container">
+  <mat-card class="feature-card">
+    <mat-card-title>Envíos Rápidos</mat-card-title>
     <mat-card-content>
-      <p>
-        En esta tienda encontrarás una selección de productos de alta calidad,
-        ofertas exclusivas y una experiencia de compra sencilla y segura.
-      </p>
-      <p>
-        Navega por nuestros productos, añade al carrito lo que más te guste y
-        finaliza tu compra fácilmente desde la sección de checkout.
-      </p>
+      <p>Recibe tu pedido en 24-48 horas en toda España.</p>
     </mat-card-content>
-    <mat-card-actions>
-      <button mat-raised-button color="primary" routerLink="/products">
-        Ver productos
-      </button>
-    </mat-card-actions>
   </mat-card>
 
-  <div class="features">
-    <mat-card class="feature">
-      <mat-card-title>Envíos Rápidos</mat-card-title>
-      <mat-card-content>
-        <p>Recibe tu pedido en 24-48 horas en toda España.</p>
-      </mat-card-content>
-    </mat-card>
+  <mat-card class="feature-card">
+    <mat-card-title>Pagos Seguros</mat-card-title>
+    <mat-card-content>
+      <p>Tus datos protegidos con los métodos más seguros del mercado.</p>
+    </mat-card-content>
+  </mat-card>
 
-    <mat-card class="feature">
-      <mat-card-title>Pagos Seguros</mat-card-title>
-      <mat-card-content>
-        <p>Tus datos protegidos con los métodos más seguros del mercado.</p>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="feature">
-      <mat-card-title>Atención al Cliente</mat-card-title>
-      <mat-card-content>
-        <p>Estamos disponibles para ayudarte en todo momento.</p>
-      </mat-card-content>
-    </mat-card>
-  </div>
+  <mat-card class="feature-card">
+    <mat-card-title>Atención al Cliente</mat-card-title>
+    <mat-card-content>
+      <p>Estamos disponibles para ayudarte en todo momento.</p>
+    </mat-card-content>
+  </mat-card>
 </div>

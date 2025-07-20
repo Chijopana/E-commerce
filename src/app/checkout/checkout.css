@@ -1,18 +1,30 @@
-mat-form-field {
-  width: 100%;
-}
-
-mat-card {
+.checkout-card {
   max-width: 600px;
-  margin: auto;
+  margin: 32px auto;
+  padding: 24px;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.summary ul {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0;
+.product-summary {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
 }
 
-.summary li {
-  padding: 4px 0;
+.total {
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }

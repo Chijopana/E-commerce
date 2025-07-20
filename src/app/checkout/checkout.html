@@ -1,57 +1,51 @@
-<mat-card>
-  <mat-card-title>Información de envío</mat-card-title>
-  <form [formGroup]="form" (ngSubmit)="submitOrder()" style="display: grid; gap: 16px;">
-    <mat-form-field appearance="fill">
-      <mat-label>Nombre completo</mat-label>
-      <input matInput formControlName="name" required />
-    </mat-form-field>
+<mat-card class="checkout-card">
+  <mat-card-title>Resumen de tu pedido</mat-card-title>
+  <mat-card-content>
+    <div *ngIf="cartItems.length > 0; else emptyCart">
+      <div class="product-summary" *ngFor="let item of cartItems">
+        <div class="product-name">{{ item.name }} (x{{ item.quantity }})</div>
+        <div class="product-price">{{ (item.price * item.quantity) | currency:'EUR' }}</div>
+      </div>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Email</mat-label>
-      <input matInput formControlName="email" type="email" required />
-    </mat-form-field>
+      <div class="total">
+        <strong>Total a pagar:</strong> {{ total | currency:'EUR' }}
+      </div>
+    </div>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Dirección</mat-label>
-      <input matInput formControlName="address" required />
-    </mat-form-field>
+    <ng-template #emptyCart>
+      <p>Tu carrito está vacío. Añade productos antes de finalizar la compra.</p>
+    </ng-template>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Ciudad</mat-label>
-      <input matInput formControlName="city" required />
-    </mat-form-field>
+    <form [formGroup]="form" (ngSubmit)="submitOrder()" class="checkout-form" *ngIf="cartItems.length > 0">
+      <mat-form-field appearance="fill">
+        <mat-label>Nombre completo</mat-label>
+        <input matInput formControlName="nombre" required />
+        <mat-error *ngIf="form.controls['nombre'].invalid && form.controls['nombre'].touched">El nombre es obligatorio</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Código postal</mat-label>
-      <input matInput formControlName="postalCode" required />
-    </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Dirección de envío</mat-label>
+        <input matInput formControlName="direccion" required />
+        <mat-error *ngIf="form.controls['direccion'].invalid && form.controls['direccion'].touched">La dirección es obligatoria</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="fill">
-      <mat-label>País</mat-label>
-      <input matInput formControlName="country" required />
-    </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" required />
+        <mat-error *ngIf="form.controls['email'].invalid && form.controls['email'].touched">Email inválido</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Método de pago</mat-label>
-      <mat-select formControlName="paymentMethod">
-        <mat-option value="card">Tarjeta de crédito</mat-option>
-        <mat-option value="paypal">PayPal</mat-option>
-        <mat-option value="cash">Pago contra entrega</mat-option>
-      </mat-select>
-    </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Método de pago</mat-label>
+        <mat-select formControlName="metodoPago">
+          <mat-option value="tarjeta">Tarjeta de crédito</mat-option>
+          <mat-option value="paypal">PayPal</mat-option>
+          <mat-option value="transferencia">Transferencia bancaria</mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.controls['metodoPago'].invalid && form.controls['metodoPago'].touched">Selecciona un método de pago</mat-error>
+      </mat-form-field>
 
-    <mat-card class="summary" style="margin-top: 24px;">
-      <mat-card-title>Resumen del pedido</mat-card-title>
-      <ul>
-        <li *ngFor="let item of cartItems">
-          {{ item.name }} x{{ item.quantity }} = {{ item.price * item.quantity | currency:'EUR' }}
-        </li>
-      </ul>
-      <p><strong>Total:</strong> {{ total | currency:'EUR' }}</p>
-    </mat-card>
-
-    <button mat-raised-button color="primary" type="submit">
-      Confirmar Pedido
-    </button>
-  </form>
+      <button mat-raised-button color="primary" type="submit">Confirmar pedido</button>
+    </form>
+  </mat-card-content>
 </mat-card>

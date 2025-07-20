@@ -5,12 +5,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { CurrencyPipe } from '@angular/common';
 
+import Swal from 'sweetalert2';
+
 import { CartService } from '../services/cart.service';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, CurrencyPipe],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
   templateUrl: './products.html',
   styleUrls: ['./products.css'],
 })
@@ -20,7 +22,7 @@ export class Products {
       id: 1,
       name: 'Auriculares Inalámbricos',
       price: 49.99,
-      image: 'https://via.placeholder.com/200x150',
+      image: 'https://via.placeholder.com/300x200',
       description: 'Auriculares con cancelación de ruido y batería de larga duración.',
       stock: 12,
     },
@@ -28,7 +30,7 @@ export class Products {
       id: 2,
       name: 'Smartwatch Deportivo',
       price: 89.99,
-      image: 'https://via.placeholder.com/200x150',
+      image: 'https://via.placeholder.com/300x200',
       description: 'Monitoriza tu salud y actividad física durante todo el día.',
       stock: 7,
     },
@@ -36,7 +38,7 @@ export class Products {
       id: 3,
       name: 'Mochila Antirrobo',
       price: 39.99,
-      image: 'https://via.placeholder.com/200x150',
+      image: 'https://via.placeholder.com/300x200',
       description: 'Diseño moderno con compartimentos secretos y USB incorporado.',
       stock: 4,
     },
@@ -44,20 +46,20 @@ export class Products {
       id: 4,
       name: 'Altavoz Bluetooth',
       price: 29.99,
-      image: 'https://via.placeholder.com/200x150',
+      image: 'https://via.placeholder.com/300x200',
       description: 'Gran calidad de sonido y resistente al agua.',
-      stock: 10,
+      stock: 0, // para mostrar agotado
     },
   ];
 
   constructor(private cartService: CartService) {}
 
   addToCart(product: any) {
-    if(product.stock <= 0){
-      alert('Producto agotado');
+    if (product.stock <= 0) {
+      Swal.fire('Oops...', 'Producto agotado', 'error');
       return;
     }
     this.cartService.addToCart(product);
-    alert(`Añadido al carrito: ${product.name}`);
+    Swal.fire('Añadido', `Añadido al carrito: ${product.name}`, 'success');
   }
 }

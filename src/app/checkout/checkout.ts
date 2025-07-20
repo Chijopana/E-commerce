@@ -1,11 +1,14 @@
 import { Component } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatSelectModule } from '@angular/material/select';
+import { CurrencyPipe } from '@angular/common';
+import { CartService, CartItem } from '../services/cart.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-checkout',
@@ -15,36 +18,33 @@ import { MatCardModule } from '@angular/material/card';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatButtonModule,
     MatCardModule,
-    CurrencyPipe,
+    MatSelectModule,
+    CurrencyPipe
   ],
   templateUrl: './checkout.html',
   styleUrls: ['./checkout.css'],
 })
 export class Checkout {
   form: FormGroup;
+  cartItems: CartItem[] = [];
 
-  cartItems = [
-    { id: 1, name: 'Producto 1', price: 49.99, quantity: 2 },
-    { id: 2, name: 'Producto 2', price: 79.99, quantity: 1 },
-  ];
-
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private cartService: CartService) {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
+      nombre: ['', Validators.required],
+      direccion: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      address: ['', Validators.required],
-      city: ['', Validators.required],
-      postalCode: ['', Validators.required],
-      country: ['', Validators.required],
-      paymentMethod: ['card', Validators.required],
+      metodoPago: ['', Validators.required],
+    });
+
+    this.cartService.cart$.subscribe(items => {
+      this.cartItems = items;
     });
   }
 
-  get total() {
-    return this.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  get total(): number {
+    return this.cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   }
 
   submitOrder() {
@@ -53,13 +53,13 @@ export class Checkout {
       return;
     }
 
-    const orderData = {
-      customer: this.form.value,
-      items: this.cartItems,
-      total: this.total,
-    };
+    Swal.fire({
+      icon: 'success',
+      title: '¡Pedido realizado!',
+      text: 'Gracias por tu compra. Pronto recibirás tu pedido.',
+    });
 
-    console.log('Pedido enviado:', orderData);
-    alert('¡Pedido completado con éxito!');
+    this.cartService.clearCart();
+    this.form.reset();
   }
 }
