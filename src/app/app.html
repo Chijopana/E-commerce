@@ -22,7 +22,7 @@
   <app-products *ngIf="currentView === 'products'"></app-products>
   <app-cart
   *ngIf="currentView === 'cart'"
-  [setCurrentView]="setView">
+  [setCurrentView]="setView.bind(this)">
 </app-cart>
   <app-checkout *ngIf="currentView === 'checkout'"></app-checkout>
 </div>

@@ -18,39 +18,39 @@ import { CartService } from '../services/cart.service';
 })
 export class Products {
   products = [
-    {
-      id: 1,
-      name: 'Auriculares Inalámbricos',
-      price: 49.99,
-      image: 'https://via.placeholder.com/300x200',
-      description: 'Auriculares con cancelación de ruido y batería de larga duración.',
-      stock: 12,
-    },
-    {
-      id: 2,
-      name: 'Smartwatch Deportivo',
-      price: 89.99,
-      image: 'https://via.placeholder.com/300x200',
-      description: 'Monitoriza tu salud y actividad física durante todo el día.',
-      stock: 7,
-    },
-    {
-      id: 3,
-      name: 'Mochila Antirrobo',
-      price: 39.99,
-      image: 'https://via.placeholder.com/300x200',
-      description: 'Diseño moderno con compartimentos secretos y USB incorporado.',
-      stock: 4,
-    },
-    {
-      id: 4,
-      name: 'Altavoz Bluetooth',
-      price: 29.99,
-      image: 'https://via.placeholder.com/300x200',
-      description: 'Gran calidad de sonido y resistente al agua.',
-      stock: 0, // para mostrar agotado
-    },
-  ];
+  {
+    id: 1,
+    name: 'Auriculares Inalámbricos',
+    price: 49.99,
+    image: '/images/auriculares.jpg',
+    description: 'Auriculares con cancelación de ruido y batería de larga duración.',
+    stock: 12,
+  },
+  {
+    id: 2,
+    name: 'Smartwatch Deportivo',
+    price: 89.99,
+    image: '/images/smartwatch.jpg',
+    description: 'Monitoriza tu salud y actividad física durante todo el día.',
+    stock: 7,
+  },
+  {
+    id: 3,
+    name: 'Mochila Antirrobo',
+    price: 39.99,
+    image: '/images/mochila.jpg',
+    description: 'Diseño moderno con compartimentos secretos y USB incorporado.',
+    stock: 4,
+  },
+  {
+    id: 4,
+    name: 'Altavoz Bluetooth',
+    price: 29.99,
+    image: '/images/altavoz.jpg',
+    description: 'Gran calidad de sonido y resistente al agua.',
+    stock: 0,
+  },
+]
 
   constructor(private cartService: CartService) {}
 

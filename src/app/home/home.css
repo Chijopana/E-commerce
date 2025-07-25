@@ -2,23 +2,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   padding: 40px;
   background: linear-gradient(135deg, #2196f3 0%, #21cbf3 100%);
   color: white;
   border-radius: 10px;
   margin-bottom: 40px;
   gap: 40px;
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
 .hero-text {
-  max-width: 50%;
+  flex: 1 1 400px;
+  max-width: 600px;
 }
 
 .hero-text h1 {
   font-size: 3rem;
   margin-bottom: 20px;
   font-weight: 700;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .hero-text p {
@@ -39,22 +43,28 @@
 }
 
 .hero-image {
-  width: 45%;
+  flex: 1 1 300px;
+  max-width: 600px;
+  width: 100%;
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   object-fit: cover;
   max-height: 350px;
 }
 
 .features-container {
   display: flex;
-  justify-content: space-around;
-  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  padding: 0 20px;
+  max-width: 1440px;
+  margin-inline: auto;
 }
 
 .feature-card {
-  flex: 1;
-  max-width: 300px;
+  flex: 1 1 280px;
+  max-width: 340px;
   text-align: center;
   padding: 20px;
   border-radius: 12px;
@@ -77,4 +87,46 @@
   color: #555;
   font-size: 1rem;
   line-height: 1.4;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .home-hero {
+    flex-direction: column;
+    padding: 30px 20px;
+    text-align: center;
+  }
+
+  .hero-text {
+    max-width: 100%;
+  }
+
+  .hero-text h1 {
+    font-size: 2.2rem;
+  }
+
+  .hero-text p {
+    font-size: 1.1rem;
+  }
+
+  .hero-image {
+    max-width: 100%;
+    max-height: none;
+    height: auto;
+  }
+
+  .cta-button {
+    font-size: 1rem;
+    padding: 10px 24px;
+  }
+
+  .features-container {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .feature-card {
+    max-width: 100%;
+  }
 }
