@@ -1,28 +1,68 @@
-<mat-toolbar color="primary">
-  <button mat-button (click)="setView('home')" [disabled]="currentView === 'home'">
-    <mat-icon>home</mat-icon>
-    Inicio
-  </button>
-  <button mat-button (click)="setView('products')" [disabled]="currentView === 'products'">
-    <mat-icon>storefront</mat-icon>
-    Productos
-  </button>
-  <button mat-button (click)="setView('cart')" [disabled]="currentView === 'cart'">
-    <mat-icon>shopping_cart</mat-icon>
-    Carrito
-  </button>
-  <button mat-button (click)="setView('checkout')" [disabled]="currentView === 'checkout'">
-    <mat-icon>payment</mat-icon>
-    Checkout
-  </button>
+<mat-toolbar color="primary" class="navbar">
+  <div class="nav-brand">
+    <mat-icon>shopping_bag</mat-icon>
+    <span class="brand-name">Mi E-Commerce</span>
+  </div>
+
+  <div class="nav-links">
+    <button mat-button routerLink="/home" routerLinkActive="active-link">
+      <mat-icon>home</mat-icon>
+      <span>Inicio</span>
+    </button>
+    <button mat-button routerLink="/products" routerLinkActive="active-link">
+      <mat-icon>storefront</mat-icon>
+      <span>Productos</span>
+    </button>
+    <button mat-button routerLink="/cart" routerLinkActive="active-link">
+      <mat-icon [matBadge]="cartItemCount" matBadgeColor="warn" [matBadgeHidden]="cartItemCount === 0">
+        shopping_cart
+      </mat-icon>
+      <span>Carrito</span>
+    </button>
+    
+    <button 
+      *ngIf="isAuthenticated" 
+      mat-button 
+      routerLink="/wishlist" 
+      routerLinkActive="active-link">
+      <mat-icon [matBadge]="wishlistCount" matBadgeColor="accent" [matBadgeHidden]="wishlistCount === 0">
+        favorite
+      </mat-icon>
+      <span>Favoritos</span>
+    </button>
+  </div>
+
+  <div class="nav-actions">
+    <button *ngIf="!isAuthenticated" mat-raised-button routerLink="/auth" class="login-button">
+      <mat-icon>login</mat-icon>
+      Ingresar
+    </button>
+
+    <button *ngIf="isAuthenticated" mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+      <mat-icon>account_circle</mat-icon>
+      <span>{{ userName }}</span>
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    
+    <mat-menu #userMenu="matMenu">
+      <button mat-menu-item routerLink="/orders">
+        <mat-icon>receipt</mat-icon>
+        <span>Mis Pedidos</span>
+      </button>
+      <button mat-menu-item routerLink="/wishlist">
+        <mat-icon>favorite</mat-icon>
+        <span>Mis Favoritos</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Cerrar Sesión</span>
+      </button>
+    </mat-menu>
+  </div>
 </mat-toolbar>
 
-<div style="padding: 16px;">
-  <app-home *ngIf="currentView === 'home'"></app-home>
-  <app-products *ngIf="currentView === 'products'"></app-products>
-  <app-cart
-  *ngIf="currentView === 'cart'"
-  [setCurrentView]="setView.bind(this)">
-</app-cart>
-  <app-checkout *ngIf="currentView === 'checkout'"></app-checkout>
+<div class="main-content">
+  <router-outlet></router-outlet>
 </div>
+

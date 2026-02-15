@@ -1,12 +1,12 @@
-import { importProvidersFrom } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { routes } from './app.routes';
 
-export const appConfig = {
+export const appConfig: ApplicationConfig = {
   providers: [
-    importProvidersFrom(
-      RouterModule.forRoot([]), // rutas si tienes
-      FormsModule              // necesario si usas ngModel en formularios
-    )
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
+    provideAnimations()
   ]
 };

@@ -1,0 +1,78 @@
+<div class="wishlist-container">
+  <div class="wishlist-header">
+    <h1>
+      <mat-icon>favorite</mat-icon>
+      Mis Favoritos
+    </h1>
+    <p *ngIf="wishlistProducts.length > 0">
+      Tienes {{ wishlistProducts.length }} producto(s) en tu lista de deseos
+    </p>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+    <p>Cargando favoritos...</p>
+  </div>
+
+  <div *ngIf="!loading && wishlistProducts.length === 0" class="empty-state">
+    <mat-icon>favorite_border</mat-icon>
+    <h2>Tu lista de favoritos está vacía</h2>
+    <p>Explora nuestros productos y añade los que más te gusten</p>
+    <button mat-raised-button color="primary" (click)="goToProducts()">
+      <mat-icon>storefront</mat-icon>
+      Ver Productos
+    </button>
+  </div>
+
+  <div *ngIf="!loading && wishlistProducts.length > 0" class="products-grid">
+    <mat-card *ngFor="let product of wishlistProducts" class="product-card">
+      <div class="product-image-container">
+        <img 
+          mat-card-image 
+          [src]="product.image" 
+          [alt]="product.name"
+          (error)="$any($event.target).src='https://placehold.co/400x300/e0e0e0/666?text=Imagen+No+Disponible'"
+          loading="lazy">
+        <button 
+          mat-icon-button 
+          class="remove-wishlist-btn"
+          matTooltip="Eliminar de favoritos"
+          (click)="removeFromWishlist(product.id)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      
+      <mat-card-content>
+        <h3 class="product-name">{{ product.name }}</h3>
+        <p class="product-description">{{ product.description }}</p>
+        
+        <div class="product-info">
+          <div class="product-rating">
+            <mat-icon>star</mat-icon>
+            <span>{{ product.rating }}</span>
+          </div>
+          <div class="product-stock" [class.out-of-stock]="product.stock === 0">
+            <mat-icon>inventory_2</mat-icon>
+            <span>{{ product.stock > 0 ? 'Stock: ' + product.stock : 'Agotado' }}</span>
+          </div>
+        </div>
+        
+        <div class="product-price">
+          ${{ product.price | number:'1.2-2' }}
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="addToCart(product)"
+          [disabled]="product.stock === 0"
+          class="add-to-cart-btn">
+          <mat-icon>shopping_cart</mat-icon>
+          {{ product.stock > 0 ? 'Añadir al Carrito' : 'Agotado' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

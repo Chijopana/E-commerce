@@ -1,33 +1,187 @@
-<div class="home-hero">
-  <div class="hero-text">
-    <h1>Bienvenido a Mini E-Commerce</h1>
-    <p>Tu tienda online de confianza con productos de calidad y ofertas exclusivas.</p>
-    <button mat-raised-button color="primary" (click)="navigateToProducts()" class="cta-button">
-      Ver productos
-    </button>
-  </div>
-  <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80" alt="Tienda online" class="hero-image" />
-</div>
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          Bienvenido a Mi E-Commerce
+        </h1>
+        <p class="hero-subtitle">
+          Encuentra los mejores productos con calidad garantizada y los mejores precios del mercado
+        </p>
+        <div class="hero-buttons">
+          <button mat-raised-button color="primary" (click)="navigateToProducts()" class="primary-cta">
+            <mat-icon>storefront</mat-icon>
+            Explorar Productos
+          </button>
+          <button mat-stroked-button class="secondary-cta" (click)="scrollToFeatures()">
+            <mat-icon>info</mat-icon>
+            Más Información
+          </button>
+        </div>
+      </div>
+      <div class="hero-image">
+        <mat-icon class="hero-icon">shopping_bag</mat-icon>
+      </div>
+    </div>
+  </section>
 
-<div class="features-container">
-  <mat-card class="feature-card">
-    <mat-card-title>Envíos Rápidos</mat-card-title>
-    <mat-card-content>
-      <p>Recibe tu pedido en 24-48 horas en toda España.</p>
-    </mat-card-content>
-  </mat-card>
+  <!-- Categories Section -->
+  <section class="categories-section">
+    <h2 class="section-title">
+      <mat-icon class="title-icon">category</mat-icon>
+      Explora por Categorías
+    </h2>
+    <div class="categories-grid">
+      <mat-card 
+        *ngFor="let category of categories" 
+        class="category-card"
+        (click)="navigateToProducts(category.value)">
+        <div class="category-icon" [style.background-color]="category.color">
+          <mat-icon>{{ category.icon }}</mat-icon>
+        </div>
+        <h3>{{ category.name }}</h3>
+        <button mat-button color="primary">
+          Ver Productos
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </mat-card>
+    </div>
+  </section>
 
-  <mat-card class="feature-card">
-    <mat-card-title>Pagos Seguros</mat-card-title>
-    <mat-card-content>
-      <p>Tus datos protegidos con los métodos más seguros del mercado.</p>
-    </mat-card-content>
-  </mat-card>
+  <!-- Featured Products Section -->
+  <section class="featured-section" *ngIf="featuredProducts.length > 0">
+    <h2 class="section-title">
+      <mat-icon class="title-icon">star</mat-icon>
+      Productos Destacados
+    </h2>
+    <div class="featured-grid">
+      <mat-card *ngFor="let product of featuredProducts" class="product-card" (click)="navigateToProduct(product.id)">
+        <div class="product-image-container">
+          <div class="product-image">
+            <mat-icon>image</mat-icon>
+          </div>
+        </div>
+        <div class="product-content">
+          <h3 class="product-name">{{ product.name }}</h3>
+          <p class="product-category">{{ product.category }}</p>
+          <div class="product-rating">
+            <mat-icon class="star-filled">star</mat-icon>
+            <span>{{ product.rating || 5 }}/5</span>
+          </div>
+          <div class="product-price">
+            <span class="price">${{ product.price.toFixed(2) }}</span>
+          </div>
+          <button mat-raised-button color="primary" class="add-to-cart-btn" (click)="addToCart(product); $event.stopPropagation()">
+            <mat-icon>shopping_cart</mat-icon>
+            Agregar
+          </button>
+        </div>
+      </mat-card>
+    </div>
+    <div class="featured-cta">
+      <button mat-raised-button color="primary" (click)="navigateToProducts()" class="view-all-btn">
+        Ver Todos los Productos
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  </section>
 
-  <mat-card class="feature-card">
-    <mat-card-title>Atención al Cliente</mat-card-title>
-    <mat-card-content>
-      <p>Estamos disponibles para ayudarte en todo momento.</p>
-    </mat-card-content>
-  </mat-card>
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <h2 class="section-title">
+      <mat-icon class="title-icon">trending_up</mat-icon>
+      Nuestros Números
+    </h2>
+    <div class="stats-container">
+      <div class="stat">
+        <mat-icon class="stat-icon">inventory_2</mat-icon>
+        <div class="stat-number">100+</div>
+        <div class="stat-label">Productos</div>
+      </div>
+      <div class="stat">
+        <mat-icon class="stat-icon">groups</mat-icon>
+        <div class="stat-number">1000+</div>
+        <div class="stat-label">Clientes Felices</div>
+      </div>
+      <div class="stat">
+        <mat-icon class="stat-icon">support_agent</mat-icon>
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">Soporte</div>
+      </div>
+      <div class="stat">
+        <mat-icon class="stat-icon">thumb_up</mat-icon>
+        <div class="stat-number">98%</div>
+        <div class="stat-label">Satisfacción</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <h2 class="section-title">
+      <mat-icon class="title-icon">verified</mat-icon>
+      ¿Por qué elegirnos?
+    </h2>
+    <div class="features-grid">
+      <mat-card *ngFor="let feature of features" class="feature-card">
+        <div class="feature-icon">
+          <mat-icon>{{ feature.icon }}</mat-icon>
+        </div>
+        <h3>{{ feature.title }}</h3>
+        <p>{{ feature.description }}</p>
+      </mat-card>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials-section">
+    <h2 class="section-title">
+      <mat-icon class="title-icon">rate_review</mat-icon>
+      Lo Que Dicen Nuestros Clientes
+    </h2>
+    <div class="testimonials-grid">
+      <mat-card *ngFor="let testimonial of testimonials" class="testimonial-card">
+        <div class="testimonial-header">
+          <mat-icon class="testimonial-avatar">{{ testimonial.image }}</mat-icon>
+          <div class="testimonial-info">
+            <h4>{{ testimonial.name }}</h4>
+            <div class="testimonial-rating">
+              <mat-icon *ngFor="let star of [1,2,3,4,5]" class="star-filled">star</mat-icon>
+            </div>
+          </div>
+        </div>
+        <p class="testimonial-text">{{ testimonial.comment }}</p>
+      </mat-card>
+    </div>
+  </section>
+
+  <!-- Promotion Banner Section -->
+  <section class="promotion-section">
+    <div class="promotion-content">
+      <div class="promotion-text">
+        <h2>Suscríbete a Nuestro Newsletter</h2>
+        <p>Recibe ofertas exclusivas, descuentos especiales y las últimas novedades directo en tu correo</p>
+      </div>
+      <div class="promotion-form">
+        <input type="email" placeholder="Tu correo electrónico" class="email-input">
+        <button mat-raised-button class="subscribe-btn">
+          <mat-icon>mail</mat-icon>
+          Suscribirse
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="cta-content">
+      <h2>¿Listo para comenzar?</h2>
+      <p>Descubre nuestra amplia selección de productos de alta calidad</p>
+      <button mat-raised-button (click)="navigateToProducts()" class="cta-button">
+        <mat-icon>rocket_launch</mat-icon>
+        Comenzar Ahora
+      </button>
+    </div>
+  </section>
 </div>

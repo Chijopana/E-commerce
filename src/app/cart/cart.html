@@ -1,44 +1,116 @@
-<div class="cart-container" *ngIf="cartItems.length > 0; else emptyCart">
-  <mat-card class="cart-card" *ngFor="let item of cartItems">
-    <div class="cart-item">
-      <img [src]="item.image" [alt]="item.name" class="product-image" />
-      <div class="item-details">
-        <h3 class="product-name">{{ item.name }}</h3>
-        <p class="product-price">{{ item.price | currency:'EUR' }}</p>
+<div class="cart-container">
+  <div class="cart-header">
+    <h1>
+      <mat-icon>shopping_cart</mat-icon>
+      Mi Carrito
+    </h1>
+    <p *ngIf="cartState.itemCount > 0">
+      Tienes {{ cartState.itemCount }} producto(s) en tu carrito
+    </p>
+  </div>
 
-        <div class="quantity-control">
-          <button mat-mini-button color="primary" (click)="updateQuantity(item.id, item.quantity - 1)" aria-label="Disminuir cantidad">
-            <mat-icon>remove</mat-icon>
-          </button>
+  <!-- Empty Cart State -->
+  <div *ngIf="cartState.items.length === 0" class="empty-cart">
+    <mat-icon>shopping_cart</mat-icon>
+    <h2>Tu carrito está vacío</h2>
+    <p>Explora nuestros productos y añade lo que más te guste</p>
+    <button mat-raised-button color="primary" (click)="continueShopping()">
+      <mat-icon>storefront</mat-icon>
+      Ver Productos
+    </button>
+  </div>
 
-          <span class="quantity">{{ item.quantity }}</span>
+  <!-- Cart with Items -->
+  <div *ngIf="cartState.items.length > 0" class="cart-content">
+    <div class="cart-items">
+      <mat-card *ngFor="let item of cartState.items" class="cart-item-card">
+        <div class="item-image">
+          <img [src]="item.image" [alt]="item.name" (error)="$any($event.target).src='https://placehold.co/400x300/e0e0e0/666?text=Imagen+No+Disponible'" loading="lazy">
+        </div>
+        
+        <div class="item-details">
+          <h3>{{ item.name }}</h3>
+          <p class="item-price">${{ item.price | number:'1.2-2' }} <span>c/u</span></p>
+          <p class="item-stock">Stock disponible: {{ item.stock }}</p>
+        </div>
 
-          <button mat-mini-button color="primary" (click)="updateQuantity(item.id, item.quantity + 1)" aria-label="Incrementar cantidad">
-            <mat-icon>add</mat-icon>
+        <div class="item-actions">
+          <div class="quantity-controls">
+            <button mat-icon-button (click)="decreaseQuantity(item)" class="quantity-btn">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <span class="quantity">{{ item.quantity }}</span>
+            <button 
+              mat-icon-button 
+              (click)="increaseQuantity(item)" 
+              [disabled]="item.quantity >= item.stock"
+              class="quantity-btn">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+          
+          <div class="item-total">
+            <span class="label">Subtotal:</span>
+            <span class="amount">${{ (item.price * item.quantity) | number:'1.2-2' }}</span>
+          </div>
+
+          <button mat-icon-button color="warn" (click)="removeItem(item)" class="remove-btn">
+            <mat-icon>delete</mat-icon>
           </button>
         </div>
-      </div>
-
-      <button mat-icon-button color="warn" (click)="removeItem(item)" aria-label="Eliminar producto">
-        <mat-icon>delete</mat-icon>
-      </button>
+      </mat-card>
     </div>
-  </mat-card>
 
-  <mat-card class="cart-summary">
-    <h2>Total: {{ getTotal() | currency:'EUR' }}</h2>
-    <button mat-raised-button color="primary" (click)="goToCheckout()">
-  Ir al checkout
-</button>
-    <button mat-button color="warn" (click)="clearCart()">Vaciar Carrito</button>
-  </mat-card>
+    <!-- Cart Summary -->
+    <div class="cart-summary">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Resumen del Pedido</mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="summary-row">
+            <span>Productos ({{ cartState.itemCount }}):</span>
+            <span>${{ cartState.total | number:'1.2-2' }}</span>
+          </div>
+          
+          <div class="summary-row">
+            <span>Envío:</span>
+            <span class="free">GRATIS</span>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <div class="summary-row total">
+            <span>Total:</span>
+            <span>${{ cartState.total | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="savings-badge" *ngIf="cartState.total > 100">
+            <mat-icon>local_offer</mat-icon>
+            <span>¡Envío gratis en compras mayores a $100!</span>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="goToCheckout()"
+            class="checkout-btn">
+            <mat-icon>payment</mat-icon>
+            Proceder al Pago
+          </button>
+          <button mat-stroked-button (click)="continueShopping()" class="continue-btn">
+            <mat-icon>arrow_back</mat-icon>
+            Seguir Comprando
+          </button>
+          <button mat-button color="warn" (click)="clearCart()" class="clear-btn">
+            <mat-icon>delete_sweep</mat-icon>
+            Vaciar Carrito
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
 </div>
-
-<ng-template #emptyCart>
-  <mat-card class="empty-cart">
-    <mat-card-title>Tu carrito está vacío</mat-card-title>
-    <mat-card-content>
-      <p>Agrega productos para comenzar a comprar.</p>
-    </mat-card-content>
-  </mat-card>
-</ng-template>
