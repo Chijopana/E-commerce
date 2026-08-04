@@ -15,14 +15,14 @@
   justify-content: center;
   gap: 12px;
   font-size: 32px;
-  color: #333;
+  color: var(--mat-sys-on-surface);
 }
 
 .checkout-header h1 mat-icon {
   font-size: 36px;
   width: 36px;
   height: 36px;
-  color: #1976d2;
+  color: var(--mat-sys-primary);
 }
 
 .checkout-content {
@@ -33,7 +33,7 @@
 }
 
 .checkout-form {
-  background: white;
+  background: var(--mat-sys-surface-container);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 24px;
@@ -41,7 +41,7 @@
 
 .checkout-form h2 {
   font-size: 24px;
-  color: #333;
+  color: var(--mat-sys-on-surface);
   margin-bottom: 24px;
 }
 
@@ -50,12 +50,12 @@
   align-items: center;
   gap: 8px;
   font-size: 18px;
-  color: #333;
+  color: var(--mat-sys-on-surface);
   margin: 20px 0 12px;
 }
 
 .checkout-form h3 mat-icon {
-  color: #1976d2;
+  color: var(--mat-sys-primary);
 }
 
 .form-row {
@@ -86,13 +86,13 @@ mat-form-field {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background-color: #e3f2fd;
+  background-color: var(--mat-sys-primary-container);
   border-radius: 8px;
   margin-top: 16px;
 }
 
 .payment-info mat-icon {
-  color: #1976d2;
+  color: var(--mat-sys-on-primary-container);
   font-size: 24px;
   width: 24px;
   height: 24px;
@@ -100,7 +100,7 @@ mat-form-field {
 
 .payment-info p {
   margin: 0;
-  color: #1565c0;
+  color: var(--mat-sys-on-primary-container);
   font-size: 14px;
 }
 
@@ -121,7 +121,7 @@ mat-form-field {
   align-items: center;
   gap: 16px;
   padding: 12px;
-  background-color: #f5f5f5;
+  background-color: var(--mat-sys-surface-container-high);
   border-radius: 8px;
 }
 
@@ -141,39 +141,39 @@ mat-form-field {
 
 .review-item-info strong {
   font-size: 16px;
-  color: #333;
+  color: var(--mat-sys-on-surface);
 }
 
 .review-item-info span {
   font-size: 14px;
-  color: #666;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .item-price {
   font-size: 12px !important;
-  color: #999 !important;
+  color: var(--mat-sys-outline) !important;
 }
 
 .review-item-total {
   font-size: 18px;
   font-weight: 700;
-  color: #1976d2;
+  color: var(--mat-sys-primary);
 }
 
 .review-info {
   padding: 16px;
-  background-color: #f5f5f5;
+  background-color: var(--mat-sys-surface-container-high);
   border-radius: 8px;
   margin-top: 12px;
 }
 
 .review-info p {
   margin: 4px 0;
-  color: #666;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .review-info strong {
-  color: #333;
+  color: var(--mat-sys-on-surface);
 }
 
 /* Order Summary */
@@ -191,7 +191,7 @@ mat-form-field {
 
 .order-summary mat-card-title {
   font-size: 20px;
-  color: #333;
+  color: var(--mat-sys-on-surface);
 }
 
 .summary-row {
@@ -200,13 +200,13 @@ mat-form-field {
   align-items: center;
   padding: 12px 0;
   font-size: 16px;
-  color: #666;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .summary-row.total {
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: var(--mat-sys-on-surface);
   padding: 16px 0 8px;
 }
 
@@ -286,3 +286,11 @@ mat-form-field {
     width: 100%;
   }
 }
+
+.coupon-box { margin: 12px 0; }
+.coupon-field { width: 100%; }
+.coupon-error { color: var(--mat-sys-error); font-size: 12px; margin: 4px 0; }
+.coupon-applied { display: flex; align-items: center; gap: 8px; background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container); padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.coupon-applied mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.coupon-applied button { margin-left: auto; }

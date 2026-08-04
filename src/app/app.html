@@ -31,8 +31,16 @@
       <span>Favoritos</span>
     </button>
   </div>
-
+<app-search-bar class="nav-search"></app-search-bar>
   <div class="nav-actions">
+    <app-theme-toggle></app-theme-toggle>
+    <button mat-icon-button [matMenuTriggerFor]="langMenu" aria-label="Idioma">
+    <mat-icon>language</mat-icon>
+  </button>
+  <mat-menu #langMenu="matMenu">
+    <button mat-menu-item (click)="t.setLang('es')">🇪🇸 Español</button>
+    <button mat-menu-item (click)="t.setLang('en')">🇬🇧 English</button>
+  </mat-menu>
     <button *ngIf="!isAuthenticated" mat-raised-button routerLink="/auth" class="login-button">
       <mat-icon>login</mat-icon>
       Ingresar
@@ -65,4 +73,5 @@
 <div class="main-content">
   <router-outlet></router-outlet>
 </div>
+<app-support-chat></app-support-chat>
 

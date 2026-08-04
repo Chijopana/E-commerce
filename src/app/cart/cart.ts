@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -22,6 +23,7 @@ import Swal from 'sweetalert2';
   templateUrl: './cart.html',
   styleUrls: ['./cart.css'],
 })
+
 export class Cart {
   cartState: CartState = {
     items: [],
@@ -29,13 +31,17 @@ export class Cart {
     itemCount: 0,
   };
 
+  private destroyRef = inject(DestroyRef);
+
   constructor(
     private cartService: CartService,
     private router: Router
   ) {
-    this.cartService.cartState$.subscribe(state => {
-      this.cartState = state;
-    });
+    this.cartService.cartState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(state => {
+        this.cartState = state;
+      });
   }
 
   increaseQuantity(item: CartItem): void {

@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { combineLatest } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -28,6 +30,8 @@ export class Wishlist implements OnInit {
   wishlistProducts: Product[] = [];
   loading = true;
 
+  private destroyRef = inject(DestroyRef);
+
   constructor(
     private wishlistService: WishlistService,
     private productsService: ProductsService,
@@ -40,12 +44,15 @@ export class Wishlist implements OnInit {
   }
 
   private loadWishlistProducts(): void {
-    this.wishlistService.wishlist$.subscribe(wishlistIds => {
-      this.productsService.getProducts().subscribe(products => {
+    combineLatest([
+      this.wishlistService.wishlist$,
+      this.productsService.getProducts(),
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([wishlistIds, products]) => {
         this.wishlistProducts = products.filter(p => wishlistIds.includes(p.id));
         this.loading = false;
       });
-    });
   }
 
   removeFromWishlist(productId: number): void {

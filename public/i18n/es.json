@@ -1,0 +1,7 @@
+{
+  "nav.home": "Inicio", "nav.products": "Productos", "nav.cart": "Carrito",
+  "nav.wishlist": "Favoritos", "nav.login": "Ingresar", "nav.logout": "Cerrar Sesión",
+  "search.placeholder": "Buscar productos...", "search.noResults": "Sin resultados",
+  "chat.title": "Soporte", "chat.placeholder": "Escribe tu mensaje...",
+  "coupon.apply": "Aplicar", "coupon.placeholder": "Código de descuento"
+}

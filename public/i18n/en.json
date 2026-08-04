@@ -1,0 +1,7 @@
+{
+  "nav.home": "Home", "nav.products": "Products", "nav.cart": "Cart",
+  "nav.wishlist": "Wishlist", "nav.login": "Sign in", "nav.logout": "Log out",
+  "search.placeholder": "Search products...", "search.noResults": "No results",
+  "chat.title": "Support", "chat.placeholder": "Type your message...",
+  "coupon.apply": "Apply", "coupon.placeholder": "Discount code"
+}

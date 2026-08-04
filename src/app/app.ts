@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -11,6 +12,10 @@ import { AuthService } from './services/auth.service';
 import { CartService } from './services/cart.service';
 import { WishlistService } from './services/wishlist.service';
 import Swal from 'sweetalert2';
+import { ThemeToggleComponent } from './components/theme-toggle.component';
+import { TranslationService } from './services/translation.service';
+import { SearchBarComponent } from './components/search-bar.component';
+import { SupportChatComponent } from './components/support-chat.component';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +30,9 @@ import Swal from 'sweetalert2';
     MatIconModule,
     MatBadgeModule,
     MatMenuModule,
+    ThemeToggleComponent,
+    SearchBarComponent,
+    SupportChatComponent,
     MatDividerModule
   ],
   templateUrl: './app.html',
@@ -35,6 +43,9 @@ export class App {
   wishlistCount = 0;
   isAuthenticated = false;
   userName = '';
+  t = inject(TranslationService);
+
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     public authService: AuthService,
@@ -42,21 +53,20 @@ export class App {
     private wishlistService: WishlistService,
     private router: Router
   ) {
-    // Subscribe to cart changes
-    this.cartService.cartState$.subscribe(state => {
-      this.cartItemCount = state.itemCount;
-    });
+    this.cartService.cartState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(state => { this.cartItemCount = state.itemCount; });
 
-    // Subscribe to wishlist changes
-    this.wishlistService.wishlist$.subscribe(wishlist => {
-      this.wishlistCount = wishlist.length;
-    });
+    this.wishlistService.wishlist$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(wishlist => { this.wishlistCount = wishlist.length; });
 
-    // Subscribe to auth changes
-    this.authService.authState$.subscribe(state => {
-      this.isAuthenticated = state.isAuthenticated;
-      this.userName = state.user?.name || '';
-    });
+    this.authService.authState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(state => {
+        this.isAuthenticated = state.isAuthenticated;
+        this.userName = state.user?.name || '';
+      });
   }
 
   logout(): void {

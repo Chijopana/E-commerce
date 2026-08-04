@@ -1,0 +1,161 @@
+<div class="detail-container" *ngIf="!loading && product">
+  <button mat-button class="back-btn" (click)="goBack()">
+    <mat-icon>arrow_back</mat-icon>
+    Volver a Productos
+  </button>
+
+  <div class="detail-main">
+    <!-- Imagen -->
+    <div class="detail-image-wrap">
+      <img
+        [src]="product.image"
+        [alt]="product.name"
+        (error)="$any($event.target).src='https://placehold.co/600x600/e0e0e0/666?text=Imagen+No+Disponible'">
+      <div class="stock-badge" [class.out-of-stock]="product.stock === 0">
+        <mat-icon>{{ product.stock > 0 ? 'check_circle' : 'cancel' }}</mat-icon>
+        <span>{{ product.stock > 0 ? 'Disponible' : 'Agotado' }}</span>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="detail-info">
+      <mat-chip-set class="category-chip">
+        <mat-chip>{{ product.category }}</mat-chip>
+      </mat-chip-set>
+
+      <h1>{{ product.name }}</h1>
+
+      <div class="detail-rating">
+        <mat-icon class="star-icon" *ngFor="let star of [1,2,3,4,5]">
+          {{ product.rating >= star ? 'star' : (product.rating >= star - 0.5 ? 'star_half' : 'star_outline') }}
+        </mat-icon>
+        <span>{{ product.rating }} ({{ product.reviews.length }} reseñas)</span>
+      </div>
+
+      <p class="detail-description">{{ product.description }}</p>
+
+      <div class="detail-price">${{ product.price | number:'1.2-2' }}</div>
+
+      <div class="stock-info" *ngIf="product.stock > 0 && product.stock <= 5">
+        <mat-icon>warning</mat-icon>
+        <span>¡Solo quedan {{ product.stock }} unidades!</span>
+      </div>
+
+      <div class="detail-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="addToCart()"
+          [disabled]="product.stock === 0"
+          class="add-to-cart-btn">
+          <mat-icon>shopping_cart</mat-icon>
+          {{ product.stock > 0 ? 'Añadir al Carrito' : 'Agotado' }}
+        </button>
+
+        <button
+          mat-icon-button
+          class="wishlist-btn"
+          [class.in-wishlist]="isInWishlist(product.id)"
+          (click)="toggleWishlist()">
+          <mat-icon>{{ isInWishlist(product.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <!-- Reseñas -->
+  <section class="reviews-section">
+    <h2>
+      <mat-icon>rate_review</mat-icon>
+      Reseñas ({{ product.reviews.length }})
+    </h2>
+
+    <div class="reviews-list" *ngIf="product.reviews.length > 0">
+      <div class="review-item" *ngFor="let review of product.reviews">
+        <div class="review-header">
+          <strong>{{ review.userName }}</strong>
+          <div class="review-stars">
+            <mat-icon class="star-icon" *ngFor="let star of [1,2,3,4,5]">
+              {{ review.rating >= star ? 'star' : 'star_outline' }}
+            </mat-icon>
+          </div>
+        </div>
+        <p>{{ review.comment }}</p>
+        <span class="review-date">{{ review.date | date:'mediumDate' }}</span>
+      </div>
+    </div>
+
+    <p class="no-reviews" *ngIf="product.reviews.length === 0">
+      Todavía no hay reseñas. ¡Sé el primero en opinar!
+    </p>
+
+    <!-- Formulario de reseña -->
+    <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="review-form">
+      <h3>Deja tu reseña</h3>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Calificación</mat-label>
+        <mat-select formControlName="rating">
+          <mat-option [value]="5">5 - Excelente</mat-option>
+          <mat-option [value]="4">4 - Muy bueno</mat-option>
+          <mat-option [value]="3">3 - Bueno</mat-option>
+          <mat-option [value]="2">2 - Regular</mat-option>
+          <mat-option [value]="1">1 - Malo</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Comentario</mat-label>
+        <textarea matInput formControlName="comment" rows="3" placeholder="¿Qué te pareció el producto?"></textarea>
+        <mat-error *ngIf="reviewForm.get('comment')?.hasError('required')">
+          El comentario es obligatorio
+        </mat-error>
+        <mat-error *ngIf="reviewForm.get('comment')?.hasError('minlength')">
+          Mínimo 5 caracteres
+        </mat-error>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" type="submit">
+        <mat-icon>send</mat-icon>
+        Publicar Reseña
+      </button>
+    </form>
+  </section>
+
+  <!-- Productos relacionados -->
+  <section class="related-section" *ngIf="relatedProducts.length > 0">
+    <h2>
+      <mat-icon>category</mat-icon>
+      También te puede interesar
+    </h2>
+    <div class="related-grid">
+      <mat-card *ngFor="let related of relatedProducts" class="related-card" (click)="goToProduct(related.id)">
+        <img
+          [src]="related.image"
+          [alt]="related.name"
+          (error)="$any($event.target).src='https://placehold.co/300x200/e0e0e0/666?text=Imagen'">
+        <mat-card-content>
+          <h4>{{ related.name }}</h4>
+          <span class="related-price">${{ related.price | number:'1.2-2' }}</span>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </section>
+</div>
+
+<div class="loading-container" *ngIf="loading">
+  <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+  <p>Cargando producto...</p>
+</div>
+
+<div class="not-found" *ngIf="!loading && notFound">
+  <mat-icon>search_off</mat-icon>
+  <h2>Producto no encontrado</h2>
+  <p>El producto que buscas no existe o fue eliminado</p>
+  <button mat-raised-button color="primary" routerLink="/products">
+    <mat-icon>storefront</mat-icon>
+    Ver Productos
+  </button>
+</div>

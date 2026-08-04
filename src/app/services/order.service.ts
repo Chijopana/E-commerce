@@ -38,38 +38,39 @@ export class OrderService {
     this.ordersSubject.next(orders);
   }
 
-  createOrder(
-    userId: number,
-    items: CartItem[],
-    shippingInfo: ShippingInfo,
-    paymentMethod: PaymentMethod
-  ): Observable<Order> {
-    return new Observable(observer => {
-      const orders = this.ordersSubject.value;
-      
-      const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const estimatedDelivery = new Date();
-      estimatedDelivery.setDate(estimatedDelivery.getDate() + 7); // 7 days from now
+createOrder(
+  userId: number,
+  items: CartItem[],
+  shippingInfo: ShippingInfo,
+  paymentMethod: PaymentMethod,
+  totalOverride?: number
+): Observable<Order> {
+  return new Observable(observer => {
+    const orders = this.ordersSubject.value;
 
-      const newOrder: Order = {
-        id: this.generateOrderId(),
-        userId,
-        items: [...items],
-        total,
-        status: OrderStatus.PENDING,
-        shippingInfo,
-        paymentMethod,
-        createdAt: new Date(),
-        estimatedDelivery,
-      };
+    const total = totalOverride ?? items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const estimatedDelivery = new Date();
+    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
 
-      orders.unshift(newOrder); // Add to beginning
-      this.saveOrders(orders);
+    const newOrder: Order = {
+      id: this.generateOrderId(),
+      userId,
+      items: [...items],
+      total,
+      status: OrderStatus.PENDING,
+      shippingInfo,
+      paymentMethod,
+      createdAt: new Date(),
+      estimatedDelivery,
+    };
 
-      observer.next(newOrder);
-      observer.complete();
-    });
-  }
+    orders.unshift(newOrder);
+    this.saveOrders(orders);
+
+    observer.next(newOrder);
+    observer.complete();
+  });
+}
 
   getOrdersByUserId(userId: number): Observable<Order[]> {
     return new Observable(observer => {

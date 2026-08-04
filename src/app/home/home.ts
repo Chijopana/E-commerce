@@ -20,70 +20,100 @@ export class Home implements OnInit {
   testimonials = [
     {
       name: 'Juan García',
-      comment: 'Excelente calidad y servicio rápido. Muy satisfecho con mi compra.',
+      comment:
+        'Excelente calidad y servicio rápido. Muy satisfecho con mi compra.',
       rating: 5,
-      image: 'account_circle'
+      image: 'account_circle',
     },
     {
       name: 'María López',
-      comment: 'Productos originales y precios muy competitivos. Lo recomiendo.',
+      comment:
+        'Productos originales y precios muy competitivos. Lo recomiendo.',
       rating: 5,
-      image: 'account_circle'
+      image: 'account_circle',
     },
     {
       name: 'Carlos Mendez',
-      comment: 'El envío fue rápido y el producto llegó en perfectas condiciones.',
+      comment:
+        'El envío fue rápido y el producto llegó en perfectas condiciones.',
       rating: 5,
-      image: 'account_circle'
+      image: 'account_circle',
     },
     {
       name: 'Ana Rodríguez',
-      comment: 'Atención del cliente impecable, resolvieron mis dudas al instante.',
+      comment:
+        'Atención del cliente impecable, resolvieron mis dudas al instante.',
       rating: 5,
-      image: 'account_circle'
-    }
+      image: 'account_circle',
+    },
   ];
 
   features = [
     {
       icon: 'local_shipping',
       title: 'Envío Gratis',
-      description: 'En compras mayores a $100'
+      description: 'En compras mayores a $100',
     },
     {
       icon: 'verified_user',
       title: 'Compra Segura',
-      description: 'Protección de datos garantizada'
+      description: 'Protección de datos garantizada',
     },
     {
-      icon: 'support_agent',
-      title: 'Soporte 24/7',
-      description: 'Estamos para ayudarte'
+      icon: 'verified',
+      title: 'Garantía de Calidad',
+      description: 'Productos verificados y certificados',
     },
     {
       icon: 'payments',
       title: 'Múltiples Pagos',
-      description: 'Aceptamos tarjetas y más'
-    }
+      description: 'Aceptamos tarjetas y más',
+    },
   ];
 
   categories = [
-    { name: 'Electrónica', value: ProductCategory.ELECTRONICS, icon: 'devices', color: '#1976d2' },
-    { name: 'Accesorios', value: ProductCategory.ACCESSORIES, icon: 'backpack', color: '#f57c00' },
-    { name: 'Deportes', value: ProductCategory.SPORTS, icon: 'sports_soccer', color: '#4caf50' },
-    { name: 'Hogar', value: ProductCategory.HOME, icon: 'home', color: '#9c27b0' }
+    {
+      name: 'Electrónica',
+      value: ProductCategory.ELECTRONICS,
+      icon: 'devices',
+      color: '#1976d2',
+    },
+    {
+      name: 'Accesorios',
+      value: ProductCategory.ACCESSORIES,
+      icon: 'backpack',
+      color: '#f57c00',
+    },
+    {
+      name: 'Deportes',
+      value: ProductCategory.SPORTS,
+      icon: 'sports_soccer',
+      color: '#4caf50',
+    },
+    {
+      name: 'Hogar',
+      value: ProductCategory.HOME,
+      icon: 'home',
+      color: '#9c27b0',
+    },
   ];
 
-  constructor(private router: Router, private productsService: ProductsService, private cartService: CartService) {}
+  constructor(
+    private router: Router,
+    private productsService: ProductsService,
+    private cartService: CartService,
+  ) {}
 
   ngOnInit(): void {
     this.loadFeaturedProducts();
   }
 
   loadFeaturedProducts(): void {
-    this.productsService.getProducts().subscribe(products => {
+    this.productsService.getProducts().subscribe((products) => {
       // Obtener 6 productos destacados aleatorios
-      this.featuredProducts = products.sort(() => Math.random() - 0.5).slice(0, 6);
+      this.featuredProducts = products
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 6);
     });
   }
 
@@ -105,7 +135,7 @@ export class Home implements OnInit {
       name: product.name,
       price: product.price,
       image: product.image,
-      stock: product.stock
+      stock: product.stock,
     });
   }
 

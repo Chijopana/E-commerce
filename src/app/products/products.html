@@ -15,23 +15,25 @@
         <mat-icon>tune</mat-icon>
         Filtros de Búsqueda
       </h3>
-      
+
       <!-- First Row: Search and Category -->
       <div class="filters-row">
         <!-- Search -->
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Buscar productos</mat-label>
-          <input 
-            matInput 
-            [(ngModel)]="searchTerm" 
+          <input
+            matInput
+            [(ngModel)]="searchTerm"
             (ngModelChange)="applyFilters()"
-            placeholder="Ej: auriculares, mochila...">
+            placeholder="Ej: auriculares, mochila..."
+          />
           <mat-icon matPrefix>search</mat-icon>
-          <button 
-            *ngIf="searchTerm" 
-            matSuffix 
-            mat-icon-button 
-            (click)="searchTerm = ''; applyFilters()">
+          <button
+            *ngIf="searchTerm"
+            matSuffix
+            mat-icon-button
+            (click)="searchTerm = ''; applyFilters()"
+          >
             <mat-icon>close</mat-icon>
           </button>
         </mat-form-field>
@@ -39,7 +41,10 @@
         <!-- Category -->
         <mat-form-field appearance="outline" class="category-field">
           <mat-label>Categoría</mat-label>
-          <mat-select [(ngModel)]="selectedCategory" (selectionChange)="applyFilters()">
+          <mat-select
+            [(ngModel)]="selectedCategory"
+            (selectionChange)="applyFilters()"
+          >
             <mat-option *ngFor="let category of categories" [value]="category">
               {{ category }}
             </mat-option>
@@ -53,33 +58,38 @@
         <!-- Min Price -->
         <mat-form-field appearance="outline" class="price-field">
           <mat-label>Precio mínimo</mat-label>
-          <input 
-            matInput 
-            type="number" 
-            [(ngModel)]="minPrice" 
+          <input
+            matInput
+            type="number"
+            [(ngModel)]="minPrice"
             (ngModelChange)="applyFilters()"
             min="0"
-            placeholder="$0">
+            placeholder="$0"
+          />
           <mat-icon matPrefix>attach_money</mat-icon>
         </mat-form-field>
 
         <!-- Max Price -->
         <mat-form-field appearance="outline" class="price-field">
           <mat-label>Precio máximo</mat-label>
-          <input 
-            matInput 
-            type="number" 
-            [(ngModel)]="maxPrice" 
+          <input
+            matInput
+            type="number"
+            [(ngModel)]="maxPrice"
             (ngModelChange)="applyFilters()"
             min="0"
-            placeholder="$999">
+            placeholder="$999"
+          />
           <mat-icon matPrefix>attach_money</mat-icon>
         </mat-form-field>
 
         <!-- Rating Filter -->
         <mat-form-field appearance="outline" class="rating-field">
           <mat-label>Rating mínimo</mat-label>
-          <mat-select [(ngModel)]="minRating" (selectionChange)="applyFilters()">
+          <mat-select
+            [(ngModel)]="minRating"
+            (selectionChange)="applyFilters()"
+          >
             <mat-option [value]="0">Todos</mat-option>
             <mat-option [value]="4">4+ estrellas</mat-option>
             <mat-option [value]="4.5">4.5+ estrellas</mat-option>
@@ -88,10 +98,11 @@
         </mat-form-field>
 
         <!-- Clear Filters -->
-        <button 
-          mat-button 
+        <button
+          mat-stroked-button
           (click)="clearFilters()"
-          class="clear-filters-btn">
+          class="clear-filters-btn"
+        >
           <mat-icon>refresh</mat-icon>
           Limpiar
         </button>
@@ -128,31 +139,48 @@
 
   <!-- Products Grid -->
   <div *ngIf="!loading && filteredProducts.length > 0" class="products-grid">
-    <mat-card *ngFor="let product of filteredProducts" class="product-card">
+    <mat-card
+      *ngFor="let product of filteredProducts"
+      class="product-card"
+      (click)="goToDetail(product.id)"
+    >
       <!-- Wishlist Button -->
-      <button 
+      <button
         *ngIf="isAuthenticated"
-        mat-icon-button 
+        mat-icon-button
         class="wishlist-btn"
         [class.in-wishlist]="isInWishlist(product.id)"
-        matTooltip="{{ isInWishlist(product.id) ? 'Quitar de favoritos' : 'Añadir a favoritos' }}"
-        (click)="toggleWishlist(product, $event)">
-        <mat-icon>{{ isInWishlist(product.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+        matTooltip="{{
+          isInWishlist(product.id)
+            ? 'Quitar de favoritos'
+            : 'Añadir a favoritos'
+        }}"
+        (click)="toggleWishlist(product, $event)"
+      >
+        <mat-icon>{{
+          isInWishlist(product.id) ? "favorite" : "favorite_border"
+        }}</mat-icon>
       </button>
 
       <!-- Product Image -->
       <div class="product-image-container">
-        <img 
-          mat-card-image 
-          [src]="product.image" 
+        <img
+          mat-card-image
+          [src]="product.image"
           [alt]="product.name"
-          (error)="$any($event.target).src='https://placehold.co/400x300/e0e0e0/666?text=Imagen+No+Disponible'"
-          loading="lazy">
-        
+          (error)="
+            $any($event.target).src =
+              'https://placehold.co/400x300/e0e0e0/666?text=Imagen+No+Disponible'
+          "
+          loading="lazy"
+        />
+
         <!-- Stock Badge -->
         <div class="stock-badge" [class.out-of-stock]="product.stock === 0">
-          <mat-icon>{{ product.stock > 0 ? 'check_circle' : 'cancel' }}</mat-icon>
-          <span>{{ product.stock > 0 ? 'Disponible' : 'Agotado' }}</span>
+          <mat-icon>{{
+            product.stock > 0 ? "check_circle" : "cancel"
+          }}</mat-icon>
+          <span>{{ product.stock > 0 ? "Disponible" : "Agotado" }}</span>
         </div>
       </div>
 
@@ -168,10 +196,18 @@
 
         <!-- Rating -->
         <div class="product-rating">
-          <mat-icon class="star-icon" *ngFor="let star of [1,2,3,4,5]">
-            {{ product.rating >= star ? 'star' : (product.rating >= star - 0.5 ? 'star_half' : 'star_outline') }}
+          <mat-icon class="star-icon" *ngFor="let star of [1, 2, 3, 4, 5]">
+            {{
+              product.rating >= star
+                ? "star"
+                : product.rating >= star - 0.5
+                  ? "star_half"
+                  : "star_outline"
+            }}
           </mat-icon>
-          <span class="rating-text">{{ product.rating }} ({{ product.reviews.length }} reseñas)</span>
+          <span class="rating-text"
+            >{{ product.rating }} ({{ product.reviews.length }} reseñas)</span
+          >
         </div>
 
         <!-- Stock Info -->
@@ -181,21 +217,20 @@
         </div>
 
         <!-- Price -->
-        <div class="product-price">
-          ${{ product.price | number:'1.2-2' }}
-        </div>
+        <div class="product-price">${{ product.price | number: "1.2-2" }}</div>
       </mat-card-content>
 
       <!-- Actions -->
       <mat-card-actions>
-        <button 
-          mat-raised-button 
-          color="primary" 
-          (click)="addToCart(product)"
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="addToCart(product); $event.stopPropagation()"
           [disabled]="product.stock === 0"
-          class="add-to-cart-btn">
+          class="add-to-cart-btn"
+        >
           <mat-icon>shopping_cart</mat-icon>
-          {{ product.stock > 0 ? 'Añadir al Carrito' : 'Agotado' }}
+          {{ product.stock > 0 ? "Añadir al Carrito" : "Agotado" }}
         </button>
       </mat-card-actions>
     </mat-card>

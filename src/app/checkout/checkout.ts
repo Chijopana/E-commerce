@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,12 +17,14 @@ import { AuthService } from '../services/auth.service';
 import { CartState } from '../models/cart.model';
 import { PaymentMethod } from '../models/order.model';
 import Swal from 'sweetalert2';
+import { CouponService, Coupon } from '../services/coupon.service';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -40,26 +43,32 @@ export class Checkout {
   paymentForm: FormGroup;
   cartState: CartState = { items: [], total: 0, itemCount: 0 };
   paymentMethods = Object.values(PaymentMethod);
+  couponCode = '';
+  couponError = '';
+  appliedCoupon: Coupon | null = null;
+
+  private destroyRef = inject(DestroyRef);
+  private orderSubmitted = false; // evita el redirect a /cart justo tras vaciar el carrito al confirmar
 
   constructor(
     private fb: FormBuilder,
     private cartService: CartService,
     private orderService: OrderService,
     private authService: AuthService,
+    private couponService: CouponService,
     private router: Router
   ) {
-    // Check if cart is empty
-    this.cartService.cartState$.subscribe(state => {
-      this.cartState = state;
-      if (state.items.length === 0) {
-        // Redirect to cart if empty
-        this.router.navigate(['/cart']);
-      }
-    });
+    this.cartService.cartState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(state => {
+        this.cartState = state;
+        if (state.items.length === 0 && !this.orderSubmitted) {
+          this.router.navigate(['/cart']);
+        }
+      });
 
-    // Get user info if available
     const user = this.authService.getUser();
-    
+
     this.shippingForm = this.fb.group({
       name: [user?.name || '', [Validators.required, Validators.minLength(3)]],
       email: [user?.email || '', [Validators.required, Validators.email]],
@@ -72,6 +81,32 @@ export class Checkout {
     this.paymentForm = this.fb.group({
       paymentMethod: [PaymentMethod.CREDIT_CARD, [Validators.required]],
     });
+  }
+
+  get discountAmount(): number {
+    if (!this.appliedCoupon) return 0;
+    return this.cartState.total * (this.appliedCoupon.discountPercent / 100);
+  }
+
+  get finalTotal(): number {
+    return this.cartState.total - this.discountAmount;
+  }
+
+  applyCoupon(): void {
+    this.couponError = '';
+    this.couponService.validate(this.couponCode).subscribe(coupon => {
+      if (coupon) {
+        this.appliedCoupon = coupon;
+      } else {
+        this.couponError = 'Código no válido';
+        this.appliedCoupon = null;
+      }
+    });
+  }
+
+  removeCoupon(): void {
+    this.appliedCoupon = null;
+    this.couponCode = '';
   }
 
   submitOrder(): void {
@@ -110,11 +145,14 @@ export class Checkout {
     const paymentMethod = this.paymentForm.value.paymentMethod;
 
     this.orderService.createOrder(
-      user.id,
-      this.cartState.items,
-      shippingInfo,
-      paymentMethod
-    ).subscribe(order => {
+  user.id,
+  this.cartState.items,
+  shippingInfo,
+  paymentMethod,
+  this.finalTotal
+).subscribe(order => {
+      this.orderSubmitted = true; // marca antes de vaciar el carrito
+
       Swal.fire({
         icon: 'success',
         title: '¡Pedido realizado!',
@@ -134,5 +172,7 @@ export class Checkout {
   goBack(): void {
     this.router.navigate(['/cart']);
   }
+
+  
 }
 

@@ -225,4 +225,13 @@ export class ProductsService {
       this.productsSubject.next([...this.mockProducts]);
     }
   }
+  
+  searchSuggestions(term: string, limit = 5): Observable<Product[]> {
+  const q = term.toLowerCase().trim();
+  if (!q) return of([]);
+  const results = this.mockProducts
+    .filter(p => p.name.toLowerCase().includes(q))
+    .slice(0, limit);
+  return of(results).pipe(delay(150));
+}
 }

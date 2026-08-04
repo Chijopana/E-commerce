@@ -13,6 +13,10 @@ export const routes: Routes = [
   { path: 'products', component: Products },
   { path: 'cart', component: Cart },
   { path: 'checkout', component: Checkout, canActivate: [authGuard] },
+  {
+    path: 'products/:id',
+    loadComponent: () => import('./product-detail/product-detail').then(m => m.ProductDetail),
+  },
   { 
     path: 'wishlist', 
     loadComponent: () => import('./wishlist/wishlist').then(m => m.Wishlist),

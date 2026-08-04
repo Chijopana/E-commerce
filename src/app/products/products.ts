@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -17,7 +19,12 @@ import { CartService } from '../services/cart.service';
 import { ProductsService } from '../services/products.service';
 import { WishlistService } from '../services/wishlist.service';
 import { AuthService } from '../services/auth.service';
-import { Product, ProductCategory, ProductFilter } from '../models/product.model';
+import {
+  Product,
+  ProductCategory,
+  ProductFilter,
+} from '../models/product.model';
+import { routes } from '../app.routes';
 
 @Component({
   selector: 'app-products',
@@ -33,12 +40,13 @@ import { Product, ProductCategory, ProductFilter } from '../models/product.model
     MatFormFieldModule,
     MatChipsModule,
     MatTooltipModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './products.html',
   styleUrls: ['./products.css'],
 })
 export class Products implements OnInit {
+  private destroyRef = inject(DestroyRef);
   products: Product[] = [];
   filteredProducts: Product[] = [];
   categories = Object.values(ProductCategory);
@@ -58,32 +66,34 @@ export class Products implements OnInit {
     private productsService: ProductsService,
     private wishlistService: WishlistService,
     private authService: AuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    // Read query params for initial category filter
-    this.route.queryParams.subscribe(params => {
-      if (params['category']) {
-        this.selectedCategory = params['category'];
-      }
-      this.loadProducts();
-    });
-    
-    // Subscribe to auth state
-    this.authService.authState$.subscribe(state => {
-      this.isAuthenticated = state.isAuthenticated;
-    });
+    this.route.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        if (params['category']) this.selectedCategory = params['category'];
+        this.loadProducts();
+      });
 
-    // Subscribe to wishlist
-    this.wishlistService.wishlist$.subscribe(wishlist => {
-      this.wishlistIds = wishlist;
-    });
+    this.authService.authState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state) => {
+        this.isAuthenticated = state.isAuthenticated;
+      });
+
+    this.wishlistService.wishlist$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((wishlist) => {
+        this.wishlistIds = wishlist;
+      });
   }
 
   private loadProducts(): void {
     this.loading = true;
-    this.productsService.getProducts().subscribe(products => {
+    this.productsService.getProducts().subscribe((products) => {
       this.products = products;
       this.applyFilters();
       this.loading = false;
@@ -92,17 +102,20 @@ export class Products implements OnInit {
 
   applyFilters(): void {
     const filter: ProductFilter = {
-      category: this.selectedCategory !== ProductCategory.ALL ? this.selectedCategory : undefined,
+      category:
+        this.selectedCategory !== ProductCategory.ALL
+          ? this.selectedCategory
+          : undefined,
       searchTerm: this.searchTerm || undefined,
       minPrice: this.minPrice,
       maxPrice: this.maxPrice,
       minRating: this.minRating || undefined,
     };
 
-    this.productsService.filterProducts(filter).subscribe(filtered => {
-      this.filteredProducts = filtered.map(p => ({
+    this.productsService.filterProducts(filter).subscribe((filtered) => {
+      this.filteredProducts = filtered.map((p) => ({
         ...p,
-        inWishlist: this.wishlistIds.includes(p.id)
+        inWishlist: this.wishlistIds.includes(p.id),
       }));
     });
   }
@@ -121,7 +134,7 @@ export class Products implements OnInit {
       Swal.fire('Oops...', 'Producto agotado', 'error');
       return;
     }
-    
+
     this.cartService.addToCart({
       id: product.id,
       name: product.name,
@@ -129,7 +142,7 @@ export class Products implements OnInit {
       image: product.image,
       stock: product.stock,
     });
-    
+
     Swal.fire({
       icon: 'success',
       title: 'Añadido al carrito',
@@ -141,7 +154,7 @@ export class Products implements OnInit {
 
   toggleWishlist(product: Product, event: Event): void {
     event.stopPropagation();
-    
+
     if (!this.isAuthenticated) {
       Swal.fire({
         icon: 'info',
@@ -154,10 +167,10 @@ export class Products implements OnInit {
     this.wishlistService.toggleWishlist(product.id);
     product.inWishlist = !product.inWishlist;
 
-    const message = product.inWishlist 
-      ? 'Añadido a favoritos' 
+    const message = product.inWishlist
+      ? 'Añadido a favoritos'
       : 'Eliminado de favoritos';
-    
+
     Swal.fire({
       icon: 'success',
       title: message,
@@ -168,5 +181,9 @@ export class Products implements OnInit {
 
   isInWishlist(productId: number): boolean {
     return this.wishlistIds.includes(productId);
+  }
+
+  goToDetail(id: number): void {
+    this.router.navigate(['/products', id]);
   }
 }

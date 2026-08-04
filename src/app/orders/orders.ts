@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -29,6 +30,8 @@ export class Orders implements OnInit {
   orders: Order[] = [];
   loading = true;
 
+  private destroyRef = inject(DestroyRef);
+
   constructor(
     private orderService: OrderService,
     private authService: AuthService,
@@ -42,10 +45,12 @@ export class Orders implements OnInit {
   private loadOrders(): void {
     const user = this.authService.getUser();
     if (user) {
-      this.orderService.getOrdersByUserId(user.id).subscribe(orders => {
-        this.orders = orders;
-        this.loading = false;
-      });
+      this.orderService.getOrdersByUserId(user.id)
+  .pipe(takeUntilDestroyed(this.destroyRef))
+  .subscribe(orders => {
+    this.orders = orders;
+    this.loading = false;
+  });
     }
   }
 
@@ -67,21 +72,21 @@ export class Orders implements OnInit {
   }
 
   getStatusColor(status: OrderStatus): string {
-    switch (status) {
-      case OrderStatus.PENDING:
-        return 'warn';
-      case OrderStatus.PROCESSING:
-        return 'primary';
-      case OrderStatus.SHIPPED:
-        return 'accent';
-      case OrderStatus.DELIVERED:
-        return 'success';
-      case OrderStatus.CANCELLED:
-        return 'error';
-      default:
-        return 'default';
-    }
+  switch (status) {
+    case OrderStatus.PENDING:
+      return 'warning';   // antes: 'warn'
+    case OrderStatus.PROCESSING:
+      return 'info';      // antes: 'primary'
+    case OrderStatus.SHIPPED:
+      return 'info';      // antes: 'accent' — reutiliza 'info', o añade .status-chip.shipped en el CSS si quieres un color propio
+    case OrderStatus.DELIVERED:
+      return 'success';
+    case OrderStatus.CANCELLED:
+      return 'error';
+    default:
+      return 'info';      // antes: 'default' — tampoco existía esa clase
   }
+}
 
   cancelOrder(order: Order): void {
     if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {

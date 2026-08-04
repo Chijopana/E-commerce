@@ -15,7 +15,7 @@
   justify-content: center;
   gap: 12px;
   font-size: 32px;
-  color: #333;
+  color: var(--mat-sys-on-surface);
   margin-bottom: 12px;
 }
 
@@ -27,7 +27,7 @@
 }
 
 .wishlist-header p {
-  color: #666;
+  color: var(--mat-sys-on-surface-variant);
   font-size: 16px;
 }
 
@@ -59,7 +59,7 @@
   justify-content: center;
   padding: 80px 20px;
   text-align: center;
-  background: white;
+  background: var(--mat-sys-surface-container);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -68,18 +68,18 @@
   font-size: 120px;
   width: 120px;
   height: 120px;
-  color: #e0e0e0;
+  color: var(--mat-sys-outline-variant);
   margin-bottom: 24px;
 }
 
 .empty-state h2 {
   font-size: 24px;
-  color: #333;
+  color: var(--mat-sys-on-surface);
   margin-bottom: 12px;
 }
 
 .empty-state p {
-  color: #666;
+  color: var(--mat-sys-on-surface-variant);
   margin-bottom: 24px;
   font-size: 16px;
 }
@@ -168,12 +168,12 @@ mat-card-content {
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: #333;
+  color: var(--mat-sys-on-surface);
 }
 
 .product-description {
   font-size: 14px;
-  color: #666;
+  color: var(--mat-sys-on-surface-variant);
   margin-bottom: 12px;
   line-height: 1.4;
   display: -webkit-box;
@@ -221,7 +221,7 @@ mat-card-content {
 .product-price {
   font-size: 24px;
   font-weight: 700;
-  color: #1976d2;
+  color: var(--mat-sys-primary);
   margin-bottom: 8px;
 }
 
