@@ -1,129 +1,150 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDividerModule } from '@angular/material/divider';
+
 import { OrderService } from '../services/order.service';
-import { AuthService } from '../services/auth.service';
-import { Order, OrderStatus } from '../models/order.model';
-import Swal from 'sweetalert2';
+import { NotificationService } from '../services/notification.service';
+import { TranslationService } from '../services/translation.service';
+import { Order, OrderStatus, PaymentMethod } from '../models/order.model';
+import { apiErrorMessage } from '../core/api-error';
+import { TranslatePipe } from '../i18n/translate.pipe';
+import {
+  orderStatusKey,
+  orderStatusIcon,
+  paymentMethodKey,
+  paymentMethodIcon,
+} from '../i18n/catalog-labels';
+
+/** Estados desde los que todavía se puede cancelar (el servidor manda). */
+const CANCELLABLE: OrderStatus[] = ['PENDING', 'PROCESSING'];
 
 @Component({
   selector: 'app-orders',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
+    DecimalPipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatChipsModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatDividerModule,
+    TranslatePipe,
   ],
   templateUrl: './orders.html',
   styleUrls: ['./orders.css'],
 })
 export class Orders implements OnInit {
-  orders: Order[] = [];
-  loading = true;
-
+  private orderService = inject(OrderService);
+  private notifications = inject(NotificationService);
+  private translation = inject(TranslationService);
+  private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 
-  constructor(
-    private orderService: OrderService,
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  readonly orders = signal<Order[]>([]);
+  readonly loading = signal(true);
+  readonly loadError = signal(false);
 
   ngOnInit(): void {
     this.loadOrders();
   }
 
-  private loadOrders(): void {
-    const user = this.authService.getUser();
-    if (user) {
-      this.orderService.getOrdersByUserId(user.id)
-  .pipe(takeUntilDestroyed(this.destroyRef))
-  .subscribe(orders => {
-    this.orders = orders;
-    this.loading = false;
-  });
-    }
+  /** Fecha localizada según el idioma activo. */
+  get locale(): string {
+    return this.translation.currentLang();
   }
 
-  getStatusIcon(status: OrderStatus): string {
-    switch (status) {
-      case OrderStatus.PENDING:
-        return 'schedule';
-      case OrderStatus.PROCESSING:
-        return 'sync';
-      case OrderStatus.SHIPPED:
-        return 'local_shipping';
-      case OrderStatus.DELIVERED:
-        return 'check_circle';
-      case OrderStatus.CANCELLED:
-        return 'cancel';
-      default:
-        return 'info';
-    }
-  }
+  loadOrders(): void {
+    this.loading.set(true);
+    this.loadError.set(false);
 
-  getStatusColor(status: OrderStatus): string {
-  switch (status) {
-    case OrderStatus.PENDING:
-      return 'warning';   // antes: 'warn'
-    case OrderStatus.PROCESSING:
-      return 'info';      // antes: 'primary'
-    case OrderStatus.SHIPPED:
-      return 'info';      // antes: 'accent' — reutiliza 'info', o añade .status-chip.shipped en el CSS si quieres un color propio
-    case OrderStatus.DELIVERED:
-      return 'success';
-    case OrderStatus.CANCELLED:
-      return 'error';
-    default:
-      return 'info';      // antes: 'default' — tampoco existía esa clase
-  }
-}
-
-  cancelOrder(order: Order): void {
-    if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
-      Swal.fire({
-        icon: 'error',
-        title: 'No se puede cancelar',
-        text: 'Este pedido ya no puede ser cancelado',
+    // No se le pasa ningún id: el servidor devuelve los pedidos del dueño del
+    // token, así que no hay forma de pedir los de otra persona.
+    this.orderService
+      .getMyOrders()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: orders => {
+          this.orders.set(orders);
+          this.loading.set(false);
+        },
+        error: () => {
+          // La página tiene que salir del estado de carga aunque falle, o se
+          // queda con el esqueleto puesto para siempre.
+          this.orders.set([]);
+          this.loadError.set(true);
+          this.loading.set(false);
+        },
       });
-      return;
-    }
+  }
 
-    Swal.fire({
-      title: '¿Cancelar pedido?',
-      text: '¿Estás seguro de que quieres cancelar este pedido?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'No',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.orderService.cancelOrder(order.id).subscribe(success => {
-          if (success) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Pedido cancelado',
-              text: 'Tu pedido ha sido cancelado exitosamente',
-              timer: 2000,
-              showConfirmButton: false,
-            });
-            this.loadOrders();
-          }
-        });
-      }
+  statusKey(status: OrderStatus): string {
+    return orderStatusKey(status);
+  }
+
+  statusIcon(status: OrderStatus): string {
+    return orderStatusIcon(status);
+  }
+
+  paymentKey(method: PaymentMethod): string {
+    return paymentMethodKey(method);
+  }
+
+  paymentIcon(method: PaymentMethod): string {
+    return paymentMethodIcon(method);
+  }
+
+  /** Clase CSS del estado; cada una tiene su color en orders.css. */
+  statusClass(status: OrderStatus): string {
+    return status.toLowerCase();
+  }
+
+  isCancellable(order: Order): boolean {
+    return CANCELLABLE.includes(order.status);
+  }
+
+  itemCount(order: Order): number {
+    return order.items.reduce((sum, item) => sum + item.quantity, 0);
+  }
+
+  async cancelOrder(order: Order): Promise<void> {
+    const confirmed = await this.notifications.confirm({
+      title: this.translation.translate('orders.confirm.title'),
+      text: this.translation.translate('orders.confirm.text'),
+      confirmText: this.translation.translate('orders.cancel'),
+      cancelText: this.translation.translate('common.cancel'),
+      danger: true,
     });
+
+    if (!confirmed) return;
+
+    this.orderService
+      .cancelOrder(order.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: updated => {
+          // Se sustituye solo el pedido afectado en vez de recargar la lista:
+          // así los paneles que el usuario tuviera abiertos no se cierran.
+          this.orders.update(list => list.map(o => (o.id === updated.id ? updated : o)));
+          this.notifications.success(this.translation.translate('orders.toast.cancelled'));
+        },
+        error: error => {
+          this.notifications.error(
+            this.translation.translate(apiErrorMessage(error, 'orders.toast.cannotCancel')),
+          );
+          // El estado real puede haber cambiado por debajo; se recarga.
+          this.loadOrders();
+        },
+      });
   }
 
   goToProducts(): void {
-    this.router.navigate(['/products']);
+    void this.router.navigate(['/products']);
   }
 }

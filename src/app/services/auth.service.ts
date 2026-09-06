@@ -1,14 +1,26 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { User, AuthState, LoginCredentials, RegisterData } from '../models/user.model';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
+import { AuthResponse, AuthState, LoginCredentials, RegisterData, User } from '../models/user.model';
+import { TokenStore } from '../core/token.store';
+import { environment } from '../../environments/environment';
 
+/**
+ * Sesión contra la API.
+ *
+ * Ya no hay usuarios ni contraseñas en el navegador: el servidor guarda el hash
+ * (bcrypt) y devuelve un JWT. Aquí solo se conserva el token y una copia del
+ * usuario para pintar la interfaz.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly STORAGE_KEY = 'ecommerce_auth';
-  private readonly USERS_KEY = 'ecommerce_users';
-  
+  private http = inject(HttpClient);
+  private tokens = inject(TokenStore);
+
+  private readonly baseUrl = `${environment.apiUrl}/auth`;
+
   private authState = new BehaviorSubject<AuthState>({
     isAuthenticated: false,
     user: null,
@@ -16,105 +28,46 @@ export class AuthService {
 
   public authState$ = this.authState.asObservable();
 
-  constructor() {
-    this.loadAuthState();
-    this.initializeDemoUsers();
+  /**
+   * Rehidrata la sesión al arrancar preguntando al servidor quién es el dueño
+   * del token. No basta con mirar si hay token guardado: puede estar caducado
+   * o pertenecer a una cuenta ya borrada, y la interfaz se quedaría enseñando
+   * una sesión que el backend no reconoce.
+   */
+  restoreSession(): Observable<User | null> {
+    if (!this.tokens.get()) return of(null);
+
+    return this.http.get<User>(`${this.baseUrl}/me`).pipe(
+      tap(user => this.authState.next({ isAuthenticated: true, user })),
+      catchError(() => {
+        this.tokens.clear();
+        this.authState.next({ isAuthenticated: false, user: null });
+        return of(null);
+      }),
+    );
   }
 
-  private initializeDemoUsers(): void {
-    const existingUsers = localStorage.getItem(this.USERS_KEY);
-    if (!existingUsers) {
-      const demoUsers = [
-        {
-          id: 1,
-          email: 'demo@ecommerce.com',
-          password: 'demo123',
-          name: 'Usuario Demo',
-          avatar: 'https://i.pravatar.cc/150?img=1',
-          wishlist: [],
-        },
-      ];
-      localStorage.setItem(this.USERS_KEY, JSON.stringify(demoUsers));
-    }
-  }
-
-  private loadAuthState(): void {
-    const saved = localStorage.getItem(this.STORAGE_KEY);
-    if (saved) {
-      try {
-        const state = JSON.parse(saved);
-        this.authState.next(state);
-      } catch (error) {
-        console.error('Error loading auth state:', error);
-      }
-    }
-  }
-
-  private saveAuthState(state: AuthState): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
-    this.authState.next(state);
-  }
-
-  login(credentials: LoginCredentials): Observable<boolean> {
-    return new Observable(observer => {
-      const users = this.getUsers();
-      const user = users.find(
-        u => u.email === credentials.email && u.password === credentials.password
+  login(credentials: LoginCredentials): Observable<User> {
+    return this.http
+      .post<AuthResponse>(`${this.baseUrl}/login`, credentials)
+      .pipe(
+        tap(res => this.acceptSession(res)),
+        map(res => res.user),
       );
-
-      if (user) {
-        const { password, ...userWithoutPassword } = user;
-        this.saveAuthState({
-          isAuthenticated: true,
-          user: userWithoutPassword,
-        });
-        observer.next(true);
-        observer.complete();
-      } else {
-        observer.next(false);
-        observer.complete();
-      }
-    });
   }
 
-  register(data: RegisterData): Observable<boolean> {
-    return new Observable(observer => {
-      const users = this.getUsers();
-      
-      if (users.find(u => u.email === data.email)) {
-        observer.next(false);
-        observer.complete();
-        return;
-      }
-
-      const newUser = {
-        id: users.length + 1,
-        email: data.email,
-        password: data.password,
-        name: data.name,
-        avatar: `https://i.pravatar.cc/150?img=${users.length + 1}`,
-        wishlist: [],
-      };
-
-      users.push(newUser);
-      localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
-
-      const { password, ...userWithoutPassword } = newUser;
-      this.saveAuthState({
-        isAuthenticated: true,
-        user: userWithoutPassword,
-      });
-
-      observer.next(true);
-      observer.complete();
-    });
+  register(data: RegisterData): Observable<User> {
+    return this.http
+      .post<AuthResponse>(`${this.baseUrl}/register`, data)
+      .pipe(
+        tap(res => this.acceptSession(res)),
+        map(res => res.user),
+      );
   }
 
   logout(): void {
-    this.saveAuthState({
-      isAuthenticated: false,
-      user: null,
-    });
+    this.tokens.clear();
+    this.authState.next({ isAuthenticated: false, user: null });
   }
 
   getUser(): User | null {
@@ -125,27 +78,8 @@ export class AuthService {
     return this.authState.value.isAuthenticated;
   }
 
-  private getUsers(): any[] {
-    const users = localStorage.getItem(this.USERS_KEY);
-    return users ? JSON.parse(users) : [];
-  }
-
-  updateUserWishlist(wishlist: number[]): void {
-    const currentUser = this.getUser();
-    if (!currentUser) return;
-
-    const updatedUser = { ...currentUser, wishlist };
-    this.saveAuthState({
-      isAuthenticated: true,
-      user: updatedUser,
-    });
-
-    // Update in storage
-    const users = this.getUsers();
-    const userIndex = users.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-      users[userIndex].wishlist = wishlist;
-      localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
-    }
+  private acceptSession(response: AuthResponse): void {
+    this.tokens.set(response.accessToken);
+    this.authState.next({ isAuthenticated: true, user: response.user });
   }
 }

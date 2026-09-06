@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "deploy": "ng build --base-href=/E-commerce/ && npx angular-cli-ghpages --dir=dist/mini-ecommerce",
+    "test": "ng test",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless"
   },
   "prettier": {
     "overrides": [
@@ -29,12 +31,10 @@
     "@angular/platform-browser": "^20.1.0",
     "@angular/router": "^20.1.0",
     "rxjs": "~7.8.0",
-    "sweetalert2": "^11.22.2",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^20.1.3",
     "@angular/build": "^20.1.1",
     "@angular/cli": "^20.1.1",
     "@angular/compiler-cli": "^20.1.0",

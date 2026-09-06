@@ -1,77 +1,123 @@
-<mat-toolbar color="primary" class="navbar">
-  <div class="nav-brand">
-    <mat-icon>shopping_bag</mat-icon>
-    <span class="brand-name">Mi E-Commerce</span>
-  </div>
+<a class="skip-link" href="#main">{{ 'nav.skipToContent' | t }}</a>
 
-  <div class="nav-links">
-    <button mat-button routerLink="/home" routerLinkActive="active-link">
+<mat-toolbar class="navbar">
+  <a class="nav-brand" routerLink="/home" [attr.aria-label]="'nav.brand' | t">
+    <mat-icon>shopping_bag</mat-icon>
+    <span class="brand-name">{{ 'nav.brand' | t }}</span>
+  </a>
+
+  <nav class="nav-links" [attr.aria-label]="'nav.brand' | t">
+    <a mat-button routerLink="/home" routerLinkActive="active-link">
       <mat-icon>home</mat-icon>
-      <span>Inicio</span>
-    </button>
-    <button mat-button routerLink="/products" routerLinkActive="active-link">
+      <span>{{ 'nav.home' | t }}</span>
+    </a>
+
+    <a mat-button routerLink="/products" routerLinkActive="active-link">
       <mat-icon>storefront</mat-icon>
-      <span>Productos</span>
-    </button>
-    <button mat-button routerLink="/cart" routerLinkActive="active-link">
-      <mat-icon [matBadge]="cartItemCount" matBadgeColor="warn" [matBadgeHidden]="cartItemCount === 0">
+      <span>{{ 'nav.products' | t }}</span>
+    </a>
+
+    <a mat-button routerLink="/cart" routerLinkActive="active-link">
+      <mat-icon
+        [matBadge]="cartItemCount()"
+        matBadgeColor="warn"
+        [matBadgeHidden]="cartItemCount() === 0">
         shopping_cart
       </mat-icon>
-      <span>Carrito</span>
-    </button>
-    
-    <button 
-      *ngIf="isAuthenticated" 
-      mat-button 
-      routerLink="/wishlist" 
-      routerLinkActive="active-link">
-      <mat-icon [matBadge]="wishlistCount" matBadgeColor="accent" [matBadgeHidden]="wishlistCount === 0">
-        favorite
-      </mat-icon>
-      <span>Favoritos</span>
-    </button>
-  </div>
-<app-search-bar class="nav-search"></app-search-bar>
+      <span>{{ 'nav.cart' | t }}</span>
+    </a>
+
+    @if (isAuthenticated()) {
+      <a mat-button routerLink="/wishlist" routerLinkActive="active-link">
+        <mat-icon
+          [matBadge]="wishlistCount()"
+          matBadgeColor="accent"
+          [matBadgeHidden]="wishlistCount() === 0">
+          favorite
+        </mat-icon>
+        <span>{{ 'nav.wishlist' | t }}</span>
+      </a>
+    }
+  </nav>
+
+  <app-search-bar class="nav-search"></app-search-bar>
+
   <div class="nav-actions">
-    <app-theme-toggle></app-theme-toggle>
-    <button mat-icon-button [matMenuTriggerFor]="langMenu" aria-label="Idioma">
-    <mat-icon>language</mat-icon>
-  </button>
-  <mat-menu #langMenu="matMenu">
-    <button mat-menu-item (click)="t.setLang('es')">🇪🇸 Español</button>
-    <button mat-menu-item (click)="t.setLang('en')">🇬🇧 English</button>
-  </mat-menu>
-    <button *ngIf="!isAuthenticated" mat-raised-button routerLink="/auth" class="login-button">
-      <mat-icon>login</mat-icon>
-      Ingresar
+    <!-- En móvil el buscador no cabe en la barra, así que se despliega bajo ella. -->
+    <button
+      mat-icon-button
+      class="search-toggle"
+      (click)="toggleSearch()"
+      [attr.aria-label]="'search.label' | t"
+      [attr.aria-expanded]="searchOpen()">
+      <mat-icon>{{ searchOpen() ? 'close' : 'search' }}</mat-icon>
     </button>
 
-    <button *ngIf="isAuthenticated" mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
-      <mat-icon>account_circle</mat-icon>
-      <span>{{ userName }}</span>
-      <mat-icon>arrow_drop_down</mat-icon>
+    <app-theme-toggle></app-theme-toggle>
+
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="langMenu"
+      [matTooltip]="'nav.language' | t"
+      [attr.aria-label]="'nav.language' | t">
+      <mat-icon>language</mat-icon>
     </button>
-    
-    <mat-menu #userMenu="matMenu">
-      <button mat-menu-item routerLink="/orders">
-        <mat-icon>receipt</mat-icon>
-        <span>Mis Pedidos</span>
-      </button>
-      <button mat-menu-item routerLink="/wishlist">
-        <mat-icon>favorite</mat-icon>
-        <span>Mis Favoritos</span>
-      </button>
-      <mat-divider></mat-divider>
-      <button mat-menu-item (click)="logout()">
-        <mat-icon>logout</mat-icon>
-        <span>Cerrar Sesión</span>
-      </button>
+
+    <mat-menu #langMenu="matMenu">
+      @for (lang of languages; track lang.code) {
+        <button
+          mat-menu-item
+          (click)="setLang(lang.code)"
+          [attr.aria-current]="translation.currentLang() === lang.code">
+          <span class="lang-flag" aria-hidden="true">{{ lang.flag }}</span>
+          <span>{{ lang.label }}</span>
+          @if (translation.currentLang() === lang.code) {
+            <mat-icon class="lang-check">check</mat-icon>
+          }
+        </button>
+      }
     </mat-menu>
+
+    @if (isAuthenticated()) {
+      <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+        <mat-icon>account_circle</mat-icon>
+        <span class="user-name">{{ userName() }}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu">
+        <button mat-menu-item routerLink="/orders">
+          <mat-icon>receipt_long</mat-icon>
+          <span>{{ 'nav.orders' | t }}</span>
+        </button>
+        <button mat-menu-item routerLink="/wishlist">
+          <mat-icon>favorite</mat-icon>
+          <span>{{ 'nav.myWishlist' | t }}</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>{{ 'nav.logout' | t }}</span>
+        </button>
+      </mat-menu>
+    } @else {
+      <a mat-flat-button routerLink="/auth" class="login-button">
+        <mat-icon>login</mat-icon>
+        <span>{{ 'nav.login' | t }}</span>
+      </a>
+    }
   </div>
 </mat-toolbar>
 
-<div class="main-content">
-  <router-outlet></router-outlet>
-</div>
-<app-support-chat></app-support-chat>
+@if (searchOpen()) {
+  <div class="mobile-search">
+    <app-search-bar (navigated)="toggleSearch()"></app-search-bar>
+  </div>
+}
 
+<main id="main" class="main-content" tabindex="-1">
+  <router-outlet></router-outlet>
+</main>
+
+<app-footer></app-footer>
+<app-support-chat></app-support-chat>

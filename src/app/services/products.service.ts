@@ -1,237 +1,121 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import { Product, ProductFilter, ProductCategory, Review } from '../models/product.model';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, finalize, map, of, shareReplay } from 'rxjs';
+import {
+  ALL_CATEGORIES,
+  PagedProducts,
+  Product,
+  ProductFilter,
+  Review,
+} from '../models/product.model';
+import { environment } from '../../environments/environment';
 
+/**
+ * Catálogo servido por la API.
+ *
+ * Ya no hay copia local del catálogo ni deltas en localStorage: el stock, las
+ * reseñas y la nota media viven en la base de datos, que es la única fuente de
+ * verdad. Eso elimina de raíz toda una clase de fallos de la versión anterior
+ * (el array mutable compartido entre páginas, el stock que nunca bajaba).
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class ProductsService {
-  private mockProducts: Product[] = [
-    {
-      id: 1,
-      name: 'Auriculares Inalámbricos Premium',
-      price: 89.99,
-      image: 'https://placehold.co/400x300/667eea/fff?text=Auriculares',
-      description: 'Auriculares con cancelación de ruido activa, batería de 30 horas y calidad de sonido Hi-Fi.',
-      stock: 12,
-      category: ProductCategory.ELECTRONICS,
-      rating: 4.5,
-      reviews: [
-        { id: 1, userId: 1, userName: 'María G.', rating: 5, comment: 'Excelente calidad de sonido', date: new Date('2026-01-15') },
-        { id: 2, userId: 2, userName: 'Carlos P.', rating: 4, comment: 'Muy buenos, la batería dura mucho', date: new Date('2026-01-20') }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Smartwatch Deportivo Pro',
-      price: 199.99,
-      image: 'https://placehold.co/400x300/764ba2/fff?text=Smartwatch',
-      description: 'Monitoriza tu salud 24/7: frecuencia cardíaca, oxígeno en sangre, sueño y 100+ modos deportivos.',
-      stock: 7,
-      category: ProductCategory.ELECTRONICS,
-      rating: 4.8,
-      reviews: [
-        { id: 3, userId: 3, userName: 'Ana M.', rating: 5, comment: 'Perfecto para hacer ejercicio', date: new Date('2026-02-01') }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Mochila Antirrobo Inteligente',
-      price: 59.99,
-      image: 'https://placehold.co/400x300/f57c00/fff?text=Mochila',
-      description: 'Diseño ergonómico con puerto USB, compartimentos secretos y material impermeable.',
-      stock: 15,
-      category: ProductCategory.ACCESSORIES,
-      rating: 4.3,
-      reviews: []
-    },
-    {
-      id: 4,
-      name: 'Altavoz Bluetooth Resistente',
-      price: 45.99,
-      image: 'https://placehold.co/400x300/4caf50/fff?text=Altavoz',
-      description: 'Sonido 360°, resistente al agua IP67, batería de 24 horas.',
-      stock: 8,
-      category: ProductCategory.ELECTRONICS,
-      rating: 4.6,
-      reviews: [
-        { id: 4, userId: 4, userName: 'Pedro L.', rating: 5, comment: 'Increíble para la playa', date: new Date('2026-01-28') }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Cámara Web 4K Ultra HD',
-      price: 129.99,
-      image: 'https://placehold.co/400x300/1976d2/fff?text=Camara',
-      description: 'Cámara profesional para streaming con micrófono incorporado y enfoque automático.',
-      stock: 5,
-      category: ProductCategory.ELECTRONICS,
-      rating: 4.7,
-      reviews: []
-    },
-    {
-      id: 6,
-      name: 'Teclado Mecánico RGB',
-      price: 89.99,
-      image: 'https://placehold.co/400x300/e91e63/fff?text=Teclado',
-      description: 'Teclado gaming con switches mecánicos, iluminación RGB personalizable y reposamuñecas.',
-      stock: 10,
-      category: ProductCategory.ELECTRONICS,
-      rating: 4.9,
-      reviews: []
-    },
-    {
-      id: 7,
-      name: 'Botella Térmica Inteligente',
-      price: 34.99,
-      image: 'https://placehold.co/400x300/00bcd4/fff?text=Botella',
-      description: 'Mantiene bebidas frías 24h o calientes 12h, con recordatorio de hidratación.',
-      stock: 20,
-      category: ProductCategory.SPORTS,
-      rating: 4.4,
-      reviews: []
-    },
-    {
-      id: 8,
-      name: 'Lámpara LED Escritorio',
-      price: 39.99,
-      image: 'https://placehold.co/400x300/ff9800/fff?text=Lampara',
-      description: 'Lámpara con 3 modos de luz, puerto USB de carga y brazo flexible.',
-      stock: 12,
-      category: ProductCategory.HOME,
-      rating: 4.2,
-      reviews: []
-    },
-    {
-      id: 9,
-      name: 'Mouse Ergonómico Inalámbrico',
-      price: 29.99,
-      image: 'https://placehold.co/400x300/9c27b0/fff?text=Mouse',
-      description: 'Diseño ergonómico vertical para reducir la fatiga, 6 botones programables.',
-      stock: 18,
-      category: ProductCategory.ELECTRONICS,
-      rating: 4.5,
-      reviews: []
-    },
-    {
-      id: 10,
-      name: 'Cargador Inalámbrico 3 en 1',
-      price: 49.99,
-      image: 'https://placehold.co/400x300/607d8b/fff?text=Cargador',
-      description: 'Carga simultánea de teléfono, smartwatch y auriculares. Compatible con todos los dispositivos.',
-      stock: 14,
-      category: ProductCategory.ELECTRONICS,
-      rating: 4.6,
-      reviews: []
-    },
-    {
-      id: 11,
-      name: 'Funda Portátil Acolchada',
-      price: 24.99,
-      image: 'https://placehold.co/400x300/795548/fff?text=Funda',
-      description: 'Protección premium para portátiles de 13-15 pulgadas con bolsillos adicionales.',
-      stock: 25,
-      category: ProductCategory.ACCESSORIES,
-      rating: 4.3,
-      reviews: []
-    },
-    {
-      id: 12,
-      name: 'Pulsera Fitness Tracker',
-      price: 39.99,
-      image: 'https://placehold.co/400x300/ff5722/fff?text=Pulsera',
-      description: 'Monitoreo de actividad, sueño y notificaciones. Batería de 7 días.',
-      stock: 16,
-      category: ProductCategory.SPORTS,
-      rating: 4.4,
-      reviews: []
-    }
-  ];
+  private http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiUrl}/products`;
 
-  private productsSubject = new BehaviorSubject<Product[]>(this.mockProducts);
   private loadingSubject = new BehaviorSubject<boolean>(false);
-
-  public products$ = this.productsSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
 
-  constructor() {}
+  /**
+   * Las categorías cambian poco, así que se piden una vez y se comparte la
+   * respuesta entre todos los suscriptores en lugar de repetir la llamada cada
+   * vez que alguien abre el desplegable de filtros.
+   */
+  private categories$?: Observable<string[]>;
 
-  getProducts(): Observable<Product[]> {
+  getProducts(filter: ProductFilter = {}): Observable<PagedProducts> {
     this.loadingSubject.next(true);
-    return of(this.mockProducts).pipe(
-      delay(500),
-      // Simulate API call
+
+    return this.http
+      .get<PagedProducts>(this.baseUrl, { params: this.toParams(filter) })
+      .pipe(finalize(() => this.loadingSubject.next(false)));
+  }
+
+  /** Atajo para quien solo quiere la lista y no le importa la paginación. */
+  getProductList(filter: ProductFilter = {}): Observable<Product[]> {
+    return this.getProducts(filter).pipe(map(page => page.items));
+  }
+
+  getProductById(id: number): Observable<Product> {
+    return this.http.get<Product>(`${this.baseUrl}/${id}`);
+  }
+
+  /**
+   * Destacados: se piden los mejor valorados en vez de barajar en el cliente.
+   * Con paginación en el servidor, barajar aquí solo mezclaría la página que
+   * haya tocado, que no es lo mismo que "los mejores de la tienda".
+   */
+  getFeatured(limit = 6): Observable<Product[]> {
+    return this.getProductList({ sortBy: 'rating', limit });
+  }
+
+  getCategories(): Observable<string[]> {
+    this.categories$ ??= this.http.get<string[]>(`${this.baseUrl}/categories`).pipe(
+      catchError(() => of([])),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+
+    return this.categories$;
+  }
+
+  searchSuggestions(term: string, limit = 6): Observable<Product[]> {
+    const q = term.trim();
+    if (!q) return of([]);
+
+    return this.getProductList({ searchTerm: q, limit }).pipe(
+      // Un fallo de red en el buscador no debe romper la barra de navegación:
+      // se enseña "sin resultados" y ya.
+      catchError(() => of([])),
     );
   }
 
-  getProductById(id: number): Observable<Product | undefined> {
-    return of(this.mockProducts.find(p => p.id === id)).pipe(delay(300));
+  addReview(productId: number, review: Pick<Review, 'rating' | 'comment'>): Observable<Product> {
+    return this.http.post<Product>(`${this.baseUrl}/${productId}/reviews`, review);
   }
 
-  filterProducts(filter: ProductFilter): Observable<Product[]> {
-    this.loadingSubject.next(true);
-    
-    let filtered = [...this.mockProducts];
+  private toParams(filter: ProductFilter): HttpParams {
+    let params = new HttpParams();
 
-    if (filter.category && filter.category !== ProductCategory.ALL) {
-      filtered = filtered.filter(p => p.category === filter.category);
+    if (filter.category && filter.category !== ALL_CATEGORIES) {
+      params = params.set('category', filter.category);
     }
-
     if (filter.searchTerm) {
-      const term = filter.searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        p =>
-          p.name.toLowerCase().includes(term) ||
-          p.description.toLowerCase().includes(term)
-      );
+      params = params.set('q', filter.searchTerm);
+    }
+    // Se compara con `null` además de `undefined`: un input numérico vacío
+    // ligado con ngModel emite `null`, y mandar `?minPrice=` haría fallar la
+    // validación del servidor.
+    if (filter.minPrice != null) {
+      params = params.set('minPrice', filter.minPrice);
+    }
+    if (filter.maxPrice != null) {
+      params = params.set('maxPrice', filter.maxPrice);
+    }
+    if (filter.minRating != null && filter.minRating > 0) {
+      params = params.set('minRating', filter.minRating);
+    }
+    if (filter.sortBy && filter.sortBy !== 'relevance') {
+      params = params.set('sort', filter.sortBy);
+    }
+    if (filter.page) {
+      params = params.set('page', filter.page);
+    }
+    if (filter.limit) {
+      params = params.set('limit', filter.limit);
     }
 
-    if (filter.minPrice !== undefined) {
-      filtered = filtered.filter(p => p.price >= filter.minPrice!);
-    }
-
-    if (filter.maxPrice !== undefined) {
-      filtered = filtered.filter(p => p.price <= filter.maxPrice!);
-    }
-
-    if (filter.minRating !== undefined) {
-      filtered = filtered.filter(p => p.rating >= filter.minRating!);
-    }
-
-    return of(filtered).pipe(
-      delay(300),
-      // Simulate API call
-    );
+    return params;
   }
-
-  getCategories(): string[] {
-    return Object.values(ProductCategory);
-  }
-
-  addReview(productId: number, review: Omit<Review, 'id'>): void {
-    const product = this.mockProducts.find(p => p.id === productId);
-    if (product) {
-      const newReview: Review = {
-        ...review,
-        id: product.reviews.length + 1,
-      };
-      product.reviews.push(newReview);
-      
-      // Recalculate rating
-      const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
-      product.rating = totalRating / product.reviews.length;
-      
-      this.productsSubject.next([...this.mockProducts]);
-    }
-  }
-  
-  searchSuggestions(term: string, limit = 5): Observable<Product[]> {
-  const q = term.toLowerCase().trim();
-  if (!q) return of([]);
-  const results = this.mockProducts
-    .filter(p => p.name.toLowerCase().includes(q))
-    .slice(0, limit);
-  return of(results).pipe(delay(150));
-}
 }

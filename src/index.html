@@ -1,15 +1,45 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>MiniEcommerce</title>
+  <title>Mi E-Commerce — Tienda online</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+        content="Tienda online de demostración construida con Angular y Material 3: catálogo con filtros, carrito, checkout por pasos, cupones, favoritos e historial de pedidos.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#5b4bd6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1626" media="(prefers-color-scheme: dark)">
+
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!--
+    Aplica el tema guardado antes de que Angular arranque.
+    Sin esto se ve un destello blanco al recargar en modo oscuro.
+  -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var dark = saved
+          ? saved === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.classList.add('dark-mode');
+      } catch (e) { /* localStorage bloqueado: se queda en claro */ }
+    })();
+  </script>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- Placeholder mientras carga el bundle; Angular lo reemplaza al arrancar. -->
+    <div class="app-boot">
+      <div class="app-boot__spinner" role="status" aria-label="Cargando la tienda"></div>
+    </div>
+  </app-root>
 </body>
 </html>

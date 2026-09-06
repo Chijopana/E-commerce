@@ -1,148 +1,176 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { ProductCategory, Product } from '../models/product.model';
+
+import { Product } from '../models/product.model';
 import { ProductsService } from '../services/products.service';
 import { CartService } from '../services/cart.service';
+import { WishlistService } from '../services/wishlist.service';
+import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
+import { TranslationService } from '../services/translation.service';
+import { ProductCardComponent } from '../components/product-card.component';
+import { TranslatePipe } from '../i18n/translate.pipe';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    ProductCardComponent,
+    TranslatePipe,
+  ],
   templateUrl: './home.html',
   styleUrls: ['./home.css'],
 })
 export class Home implements OnInit {
-  featuredProducts: Product[] = [];
-  testimonials = [
-    {
-      name: 'Juan García',
-      comment:
-        'Excelente calidad y servicio rápido. Muy satisfecho con mi compra.',
-      rating: 5,
-      image: 'account_circle',
-    },
-    {
-      name: 'María López',
-      comment:
-        'Productos originales y precios muy competitivos. Lo recomiendo.',
-      rating: 5,
-      image: 'account_circle',
-    },
-    {
-      name: 'Carlos Mendez',
-      comment:
-        'El envío fue rápido y el producto llegó en perfectas condiciones.',
-      rating: 5,
-      image: 'account_circle',
-    },
-    {
-      name: 'Ana Rodríguez',
-      comment:
-        'Atención del cliente impecable, resolvieron mis dudas al instante.',
-      rating: 5,
-      image: 'account_circle',
-    },
+  private router = inject(Router);
+  private productsService = inject(ProductsService);
+  private cartService = inject(CartService);
+  private wishlistService = inject(WishlistService);
+  private authService = inject(AuthService);
+  private notifications = inject(NotificationService);
+  private translation = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
+
+  readonly featuredProducts = signal<Product[]>([]);
+  readonly loading = signal(true);
+  readonly wishlistIds = signal<number[]>([]);
+  readonly isAuthenticated = signal(false);
+
+  /** Marcadores de posición mientras cargan los destacados. */
+  readonly skeletons = [1, 2, 3, 4, 5, 6];
+
+  newsletterEmail = '';
+  readonly newsletterError = signal('');
+
+  // Los valores coinciden con las categorias que sirve la API; el icono es
+  // decoracion del frontend y por eso vive aqui.
+  readonly categories = [
+    { key: 'category.electronics', value: 'Electrónica', icon: 'devices' },
+    { key: 'category.accessories', value: 'Accesorios', icon: 'backpack' },
+    { key: 'category.sports', value: 'Deportes', icon: 'fitness_center' },
+    { key: 'category.home', value: 'Hogar', icon: 'chair' },
   ];
 
-  features = [
-    {
-      icon: 'local_shipping',
-      title: 'Envío Gratis',
-      description: 'En compras mayores a $100',
-    },
-    {
-      icon: 'verified_user',
-      title: 'Compra Segura',
-      description: 'Protección de datos garantizada',
-    },
-    {
-      icon: 'verified',
-      title: 'Garantía de Calidad',
-      description: 'Productos verificados y certificados',
-    },
-    {
-      icon: 'payments',
-      title: 'Múltiples Pagos',
-      description: 'Aceptamos tarjetas y más',
-    },
+  readonly features = [
+    { icon: 'local_shipping', key: 'shipping' },
+    { icon: 'verified_user', key: 'secure' },
+    { icon: 'workspace_premium', key: 'quality' },
+    { icon: 'payments', key: 'payments' },
   ];
 
-  categories = [
-    {
-      name: 'Electrónica',
-      value: ProductCategory.ELECTRONICS,
-      icon: 'devices',
-      color: '#1976d2',
-    },
-    {
-      name: 'Accesorios',
-      value: ProductCategory.ACCESSORIES,
-      icon: 'backpack',
-      color: '#f57c00',
-    },
-    {
-      name: 'Deportes',
-      value: ProductCategory.SPORTS,
-      icon: 'sports_soccer',
-      color: '#4caf50',
-    },
-    {
-      name: 'Hogar',
-      value: ProductCategory.HOME,
-      icon: 'home',
-      color: '#9c27b0',
-    },
+  readonly stats = [
+    { icon: 'inventory_2', value: '100+', key: 'home.stats.products' },
+    { icon: 'groups', value: '1000+', key: 'home.stats.customers' },
+    { icon: 'support_agent', value: '24/7', key: 'home.stats.support' },
+    { icon: 'thumb_up', value: '98%', key: 'home.stats.satisfaction' },
   ];
 
-  constructor(
-    private router: Router,
-    private productsService: ProductsService,
-    private cartService: CartService,
-  ) {}
+  /** Los testimonios son datos de demostración, no traducibles por clave. */
+  readonly testimonials = [
+    { name: 'Juan García', comment: 'Excelente calidad y servicio rápido. Muy satisfecho con mi compra.' },
+    { name: 'María López', comment: 'Productos originales y precios muy competitivos. Lo recomiendo.' },
+    { name: 'Carlos Méndez', comment: 'El envío fue rápido y el producto llegó en perfectas condiciones.' },
+    { name: 'Ana Rodríguez', comment: 'Atención al cliente impecable, resolvieron mis dudas al instante.' },
+  ];
 
   ngOnInit(): void {
-    this.loadFeaturedProducts();
+    // `getFeatured` baraja una copia. Antes la home ordenaba con `sort()` el
+    // array que devolvía el servicio, que era el catálogo real: el orden de la
+    // tienda entera cambiaba solo por haber pasado por la portada.
+    this.productsService
+      .getFeatured(6)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: products => {
+          this.featuredProducts.set(products);
+          this.loading.set(false);
+        },
+        error: () => {
+          // La portada tiene que salir del esqueleto aunque la API falle: el
+          // resto de la pagina (categorias, ventajas) sigue siendo util.
+          this.featuredProducts.set([]);
+          this.loading.set(false);
+        },
+      });
+
+    this.authService.authState$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(state => this.isAuthenticated.set(state.isAuthenticated));
+
+    this.wishlistService.wishlist$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(ids => this.wishlistIds.set(ids));
   }
 
-  loadFeaturedProducts(): void {
-    this.productsService.getProducts().subscribe((products) => {
-      // Obtener 6 productos destacados aleatorios
-      this.featuredProducts = products
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 6);
+  goToProducts(category?: string): void {
+    void this.router.navigate(['/products'], {
+      queryParams: category ? { category } : {},
     });
   }
 
-  navigateToProducts(category?: string): void {
-    if (category) {
-      this.router.navigate(['/products'], { queryParams: { category } });
-    } else {
-      this.router.navigate(['/products']);
-    }
-  }
-
-  navigateToProduct(id: number): void {
-    this.router.navigate(['/products', id.toString()]);
+  scrollToCategories(): void {
+    document.querySelector('.categories')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   addToCart(product: Product): void {
-    this.cartService.addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      stock: product.stock,
-    });
+    const result = this.cartService.addToCart(product);
+
+    if (result.ok) {
+      this.notifications.success(
+        this.translation.translate('toast.addedToCart', { name: product.name }),
+      );
+    } else if (result.reason === 'out-of-stock') {
+      this.notifications.error(this.translation.translate('toast.outOfStock'));
+    } else {
+      this.notifications.warning(
+        this.translation.translate('toast.stockLimit', { count: result.available }),
+      );
+    }
   }
 
-  scrollToFeatures(): void {
-    const categoriesSection = document.querySelector('.categories-section');
-    if (categoriesSection) {
-      categoriesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  toggleWishlist(product: Product): void {
+    if (!this.isAuthenticated()) {
+      this.notifications.info(this.translation.translate('toast.loginRequiredWishlist'));
+      return;
     }
+
+    this.wishlistService
+      .toggle(product.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: added =>
+          this.notifications.success(
+            this.translation.translate(added ? 'toast.wishlistAdded' : 'toast.wishlistRemoved'),
+          ),
+        error: () => this.notifications.error(this.translation.translate('errors.network')),
+      });
+  }
+
+  /**
+   * El formulario del newsletter existía pero no estaba conectado a nada: se
+   * podía escribir y pulsar "Suscribirse" sin que ocurriera absolutamente nada.
+   * Sigue sin haber backend, pero al menos valida y confirma.
+   */
+  subscribeNewsletter(): void {
+    const email = this.newsletterEmail.trim();
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
+    if (!valid) {
+      this.newsletterError.set(this.translation.translate('home.newsletter.invalid'));
+      return;
+    }
+
+    this.newsletterError.set('');
+    this.newsletterEmail = '';
+    this.notifications.success(this.translation.translate('home.newsletter.success'));
   }
 }

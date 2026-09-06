@@ -8,7 +8,6 @@ export interface Product {
   category: string;
   rating: number;
   reviews: Review[];
-  inWishlist?: boolean;
 }
 
 export interface Review {
@@ -17,17 +16,20 @@ export interface Review {
   userName: string;
   rating: number;
   comment: string;
-  date: Date;
+  /** ISO 8601 tal y como llega de la API. */
+  date: string;
 }
 
-export enum ProductCategory {
-  ELECTRONICS = 'Electrónica',
-  ACCESSORIES = 'Accesorios',
-  CLOTHING = 'Ropa',
-  SPORTS = 'Deportes',
-  HOME = 'Hogar',
-  ALL = 'Todos'
-}
+/**
+ * Las categorias las sirve la API (`GET /products/categories`), no una lista
+ * fija en el cliente: si mañana entra una categoria nueva en el catalogo, el
+ * filtro la recoge sin tocar el frontend.
+ *
+ * `ALL` no es una categoria real, solo el valor del filtro "todas".
+ */
+export const ALL_CATEGORIES = '__ALL__';
+
+export type ProductSort = 'relevance' | 'price-asc' | 'price-desc' | 'rating' | 'name';
 
 export interface ProductFilter {
   category?: string;
@@ -35,4 +37,16 @@ export interface ProductFilter {
   maxPrice?: number;
   searchTerm?: string;
   minRating?: number;
+  sortBy?: ProductSort;
+  page?: number;
+  limit?: number;
+}
+
+/** Respuesta paginada del catalogo. */
+export interface PagedProducts {
+  items: Product[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

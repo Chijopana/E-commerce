@@ -1,54 +1,147 @@
-/* Global Styles */
+/* ============================================================
+   ESTILOS GLOBALES
+   El color vive en custom-theme.scss (tokens --mat-sys-* y --brand-*).
+   Aquí solo va reset, utilidades y overrides de Material.
+============================================================ */
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
-  height: 100%;
-  font-family: 'Roboto', sans-serif;
-}
-
+html,
 body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  height: 100%;
 }
 
-/* Smooth Scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom Scrollbar */
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Respeta a quien pide menos movimiento en el sistema operativo. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   PANTALLA DE ARRANQUE (antes de que Angular hidrate <app-root>)
+============================================================ */
+.app-boot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--mat-sys-surface);
+}
+
+.app-boot__spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid var(--mat-sys-surface-container-highest);
+  border-top-color: var(--mat-sys-primary);
+  animation: boot-spin 0.7s linear infinite;
+}
+
+@keyframes boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   SCROLLBAR — sigue el tema en vez de quedarse gris claro fijo
+============================================================ */
+* {
+  scrollbar-color: var(--mat-sys-outline) transparent;
+  scrollbar-width: thin;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--mat-sys-surface-container);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--mat-sys-outline-variant);
   border-radius: 5px;
+  border: 2px solid var(--mat-sys-surface-container);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--mat-sys-outline);
 }
 
-/* Material Overrides */
+/* ============================================================
+   ACCESIBILIDAD
+============================================================ */
+:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Enlace para saltar al contenido, visible solo al tabular. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 2000;
+  padding: 12px 20px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  border-radius: 0 0 var(--radius-sm) 0;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   OVERRIDES DE MATERIAL
+============================================================ */
 .mat-mdc-form-field {
   width: 100%;
 }
 
 .mat-mdc-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 mat-toolbar {
@@ -57,7 +150,41 @@ mat-toolbar {
   z-index: 1000;
 }
 
-/* Animations */
+/* ============================================================
+   ESQUELETOS DE CARGA
+   Sustituyen a los spinners: mantienen el layout estable y la
+   página deja de "saltar" cuando llegan los datos.
+============================================================ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--mat-sys-surface-container-high);
+  border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent),
+    transparent
+  );
+  animation: skeleton-sweep 1.4s infinite;
+}
+
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ============================================================
+   ANIMACIONES Y UTILIDADES
+============================================================ */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -69,113 +196,52 @@ mat-toolbar {
   }
 }
 
-@keyframes slideIn {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
 .fade-in {
   animation: fadeIn 0.3s ease;
 }
 
-.slide-in {
-  animation: slideIn 0.4s ease;
-}
-
-/* Utility Classes */
 .text-center {
   text-align: center;
 }
 
-.mt-1 { margin-top: 8px; }
-.mt-2 { margin-top: 16px; }
-.mt-3 { margin-top: 24px; }
-.mt-4 { margin-top: 32px; }
+.container {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 16px;
+}
 
-.mb-1 { margin-bottom: 8px; }
-.mb-2 { margin-bottom: 16px; }
-.mb-3 { margin-bottom: 24px; }
-.mb-4 { margin-bottom: 32px; }
-
-.p-1 { padding: 8px; }
-.p-2 { padding: 16px; }
-.p-3 { padding: 24px; }
-.p-4 { padding: 32px; }
-
-/* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.2;
   margin: 0;
 }
 
-/* Links */
 a {
   text-decoration: none;
   color: inherit;
 }
 
-/* Images */
 img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* Buttons */
 button {
   cursor: pointer;
-  border: none;
-  outline: none;
-  transition: all 0.3s ease;
+  font-family: inherit;
 }
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
-/* Material Divider Custom */
-mat-divider {
-  margin: 16px 0 !important;
-}
-
-/* Custom Badge Colors */
-.mat-badge-accent .mat-badge-content {
-  background: #ff4081;
-}
-
-.mat-badge-warn .mat-badge-content {
-  background: #f44336;
-}
-
-/* Loading Spinner Center */
-.spinner-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-}
-
-/* Empty State */
+/* ============================================================
+   ESTADOS VACÍOS (compartidos por carrito, pedidos, favoritos…)
+============================================================ */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 72px 20px;
 }
 
 .empty-state mat-icon {
@@ -186,31 +252,46 @@ mat-divider {
   margin-bottom: 20px;
 }
 
-/* Container */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 16px;
+/* ============================================================
+   AVISOS (MatSnackBar)
+   El color va en un borde lateral, no en el fondo: mantiene el
+   contraste del texto en claro y en oscuro sin repintar el panel.
+============================================================ */
+.app-snack {
+  --mdc-snackbar-container-color: var(--mat-sys-inverse-surface);
+  --mdc-snackbar-supporting-text-color: var(--mat-sys-inverse-on-surface);
+  border-left: 4px solid var(--mat-sys-primary);
+  border-radius: var(--radius-sm) !important;
 }
 
-/* Card Hover Effects */
-.mat-mdc-card:hover {
-  transform: translateY(-2px);
-  transition: all 0.3s ease;
+.app-snack--success {
+  border-left-color: var(--state-success);
 }
 
-/* SweetAlert2 Custom */
-.swal2-popup {
-  border-radius: 12px !important;
-  font-family: 'Roboto', sans-serif !important;
+.app-snack--error {
+  border-left-color: var(--state-error);
 }
 
-/* Responsive */
+.app-snack--warning {
+  border-left-color: var(--state-warning);
+}
+
+.app-snack--info {
+  border-left-color: var(--state-info);
+}
+
+/* Línea secundaria dentro del diálogo de pedido confirmado. */
+.dialog-note {
+  margin-top: 8px;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
 @media (max-width: 768px) {
   body {
     font-size: 14px;
   }
-  
+
   .container {
     padding: 0 12px;
   }
