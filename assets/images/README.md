@@ -1,32 +1,31 @@
-# Placeholder Images
+# Imágenes de producto
 
-Este proyecto usa imágenes de placeholder para demostración. Las URLs siguen el patrón:
+Los cuatro primeros productos del catálogo usan las fotos de esta carpeta:
 
-```
-https://via.placeholder.com/400x300
-```
+| Producto | Archivo |
+|---|---|
+| Auriculares Inalámbricos Premium | `auriculares.jpg` |
+| Smartwatch Deportivo Pro | `smartwatch.jpg` |
+| Mochila Antirrobo Inteligente | `mochila.jpg` |
+| Altavoz Bluetooth Resistente | `altavoz.jpg` |
 
-## Imágenes por Producto
+El resto del catálogo tira de `placehold.co`, un servicio de marcadores de
+posición remoto. Se referencian desde `ProductsService.baseCatalog`.
 
-1. **Auriculares**: `https://via.placeholder.com/400x300/667eea/ffffff?text=Auriculares`
-2. **Smartwatch**: `https://via.placeholder.com/400x300/764ba2/ffffff?text=Smartwatch`
-3. **Mochila**: `https://via.placeholder.com/400x300/f57c00/ffffff?text=Mochila`
-4. **Altavoz**: `https://via.placeholder.com/400x300/4caf50/ffffff?text=Altavoz`
-5. **Cámara**: `https://via.placeholder.com/400x300/1976d2/ffffff?text=Camara`
-6. **Teclado**: `https://via.placeholder.com/400x300/e91e63/ffffff?text=Teclado`
-7. **Botella**: `https://via.placeholder.com/400x300/00bcd4/ffffff?text=Botella`
-8. **Lámpara**: `https://via.placeholder.com/400x300/ff9800/ffffff?text=Lampara`
-9. **Mouse**: `https://via.placeholder.com/400x300/9c27b0/ffffff?text=Mouse`
-10. **Cargador**: `https://via.placeholder.com/400x300/607d8b/ffffff?text=Cargador`
-11. **Funda**: `https://via.placeholder.com/400x300/795548/ffffff?text=Funda`
-12. **Pulsera**: `https://via.placeholder.com/400x300/ff5722/ffffff?text=Pulsera`
+## Por qué una mezcla y no todo remoto
 
-## Para Producción
+Antes los doce productos apuntaban a URLs remotas: sin conexión, el catálogo
+entero se veía como una cuadrícula de huecos grises. Usar las fotos locales que
+ya estaban en el repositorio (y que nadie referenciaba) hace que al menos la
+primera pantalla se vea bien sin red, y de paso enseña productos de verdad en
+vez de rectángulos de color.
 
-Reemplaza estas URLs con imágenes reales de tu inventario.
+Para las que siguen siendo remotas hay una imagen de reserva en línea (un SVG
+como `data:` URI, en `product-card.component.ts`), de modo que si la petición
+falla se ve un marcador limpio y no el icono de imagen rota del navegador.
 
-## Servicios Recomendados
+## Para producción
 
-- [Unsplash](https://unsplash.com/) - Imágenes gratis de alta calidad
-- [Pexels](https://www.pexels.com/) - Stock photos gratis
-- [Pixabay](https://pixabay.com/) - Imágenes y videos gratis
+Sustituye las URLs de `placehold.co` por imágenes reales del inventario,
+idealmente servidas en varios tamaños (`srcset`) y en formatos modernos
+(WebP/AVIF).

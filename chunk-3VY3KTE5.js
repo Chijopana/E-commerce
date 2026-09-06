@@ -1,0 +1,1 @@
+import{Wb as e}from"./chunk-YO4RFV4B.js";function o(n,t){if(!(n instanceof e))return t;if(n.status===0)return"errors.network";let r=n.error?.message;return Array.isArray(r)&&r.length>0?String(r[0]):typeof r=="string"&&r.trim()?r:t}export{o as a};
