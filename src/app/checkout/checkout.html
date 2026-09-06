@@ -1,358 +1,322 @@
-<div class="checkout-container">
-  <div class="checkout-header">
+<div class="checkout">
+  <header class="checkout__head">
     <h1>
-      <mat-icon>payment</mat-icon>
-      Finalizar Compra
+      <mat-icon aria-hidden="true">lock</mat-icon>
+      {{ 'checkout.title' | t }}
     </h1>
-  </div>
+  </header>
 
-  <div class="checkout-content">
-    <div class="checkout-form">
+  <div class="checkout__layout">
+    <div class="checkout__main">
       <mat-stepper linear #stepper>
-        <!-- Step 1: Shipping Information -->
-        <mat-step [stepControl]="shippingForm" label="Información de Envío">
-          <form [formGroup]="shippingForm">
-            <h2>Datos de Envío</h2>
+        <!-- ===================================================== 1. Envío -->
+        <mat-step [stepControl]="shippingForm" [label]="'checkout.steps.shipping' | t">
+          <form [formGroup]="shippingForm" class="step-form">
+            <h2>{{ 'checkout.shipping.title' | t }}</h2>
 
             <div class="form-row">
               <mat-form-field appearance="outline">
-                <mat-label>Nombre Completo</mat-label>
-                <input
-                  matInput
-                  formControlName="name"
-                  placeholder="Juan Pérez"
-                />
+                <mat-label>{{ 'checkout.shipping.name' | t }}</mat-label>
+                <input matInput formControlName="name" autocomplete="name" />
                 <mat-icon matPrefix>person</mat-icon>
-                <mat-error
-                  *ngIf="shippingForm.get('name')?.hasError('required')"
-                >
-                  El nombre es requerido
-                </mat-error>
-                <mat-error
-                  *ngIf="shippingForm.get('name')?.hasError('minlength')"
-                >
-                  Mínimo 3 caracteres
-                </mat-error>
+                @if (shippingForm.get('name')?.hasError('required')) {
+                  <mat-error>{{ 'errors.required' | t }}</mat-error>
+                } @else if (shippingForm.get('name')?.hasError('minlength')) {
+                  <mat-error>{{ 'errors.minLength' | t: { min: 3 } }}</mat-error>
+                }
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>Email</mat-label>
-                <input
-                  matInput
-                  type="email"
-                  formControlName="email"
-                  placeholder="correo@ejemplo.com"
-                />
+                <mat-label>{{ 'checkout.shipping.email' | t }}</mat-label>
+                <input matInput type="email" formControlName="email" autocomplete="email" />
                 <mat-icon matPrefix>email</mat-icon>
-                <mat-error
-                  *ngIf="shippingForm.get('email')?.hasError('required')"
-                >
-                  El email es requerido
-                </mat-error>
-                <mat-error *ngIf="shippingForm.get('email')?.hasError('email')">
-                  Email inválido
-                </mat-error>
+                @if (shippingForm.get('email')?.hasError('required')) {
+                  <mat-error>{{ 'errors.required' | t }}</mat-error>
+                } @else if (shippingForm.get('email')?.hasError('email')) {
+                  <mat-error>{{ 'errors.email' | t }}</mat-error>
+                }
               </mat-form-field>
             </div>
 
             <mat-form-field appearance="outline">
-              <mat-label>Teléfono</mat-label>
-              <input
-                matInput
-                formControlName="phone"
-                placeholder="5551234567"
-              />
+              <mat-label>{{ 'checkout.shipping.phone' | t }}</mat-label>
+              <input matInput formControlName="phone" autocomplete="tel" inputmode="numeric" />
               <mat-icon matPrefix>phone</mat-icon>
-              <mat-error
-                *ngIf="shippingForm.get('phone')?.hasError('required')"
-              >
-                El teléfono es requerido
-              </mat-error>
-              <mat-error *ngIf="shippingForm.get('phone')?.hasError('pattern')">
-                Debe ser un número de 10 dígitos
-              </mat-error>
+              @if (shippingForm.get('phone')?.hasError('required')) {
+                <mat-error>{{ 'errors.required' | t }}</mat-error>
+              } @else if (shippingForm.get('phone')?.hasError('pattern')) {
+                <mat-error>{{ 'errors.phone' | t }}</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Dirección</mat-label>
+              <mat-label>{{ 'checkout.shipping.address' | t }}</mat-label>
               <textarea
                 matInput
                 formControlName="address"
                 rows="2"
-                placeholder="Calle, número, colonia..."
-              ></textarea>
+                autocomplete="street-address"
+                [placeholder]="'checkout.shipping.addressPlaceholder' | t"></textarea>
               <mat-icon matPrefix>location_on</mat-icon>
-              <mat-error
-                *ngIf="shippingForm.get('address')?.hasError('required')"
-              >
-                La dirección es requerida
-              </mat-error>
-              <mat-error
-                *ngIf="shippingForm.get('address')?.hasError('minlength')"
-              >
-                Mínimo 10 caracteres
-              </mat-error>
+              @if (shippingForm.get('address')?.hasError('required')) {
+                <mat-error>{{ 'errors.required' | t }}</mat-error>
+              } @else if (shippingForm.get('address')?.hasError('minlength')) {
+                <mat-error>{{ 'errors.minLength' | t: { min: 10 } }}</mat-error>
+              }
             </mat-form-field>
 
             <div class="form-row">
               <mat-form-field appearance="outline">
-                <mat-label>Ciudad</mat-label>
-                <input
-                  matInput
-                  formControlName="city"
-                  placeholder="Ciudad de México"
-                />
+                <mat-label>{{ 'checkout.shipping.city' | t }}</mat-label>
+                <input matInput formControlName="city" autocomplete="address-level2" />
                 <mat-icon matPrefix>location_city</mat-icon>
-                <mat-error
-                  *ngIf="shippingForm.get('city')?.hasError('required')"
-                >
-                  La ciudad es requerida
-                </mat-error>
+                @if (shippingForm.get('city')?.hasError('required')) {
+                  <mat-error>{{ 'errors.required' | t }}</mat-error>
+                }
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>Código Postal</mat-label>
+                <mat-label>{{ 'checkout.shipping.postalCode' | t }}</mat-label>
                 <input
                   matInput
                   formControlName="postalCode"
-                  placeholder="12345"
-                />
+                  autocomplete="postal-code"
+                  inputmode="numeric" />
                 <mat-icon matPrefix>markunread_mailbox</mat-icon>
-                <mat-error
-                  *ngIf="shippingForm.get('postalCode')?.hasError('required')"
-                >
-                  El código postal es requerido
-                </mat-error>
-                <mat-error
-                  *ngIf="shippingForm.get('postalCode')?.hasError('pattern')"
-                >
-                  Debe ser un código de 5 dígitos
-                </mat-error>
+                @if (shippingForm.get('postalCode')?.hasError('required')) {
+                  <mat-error>{{ 'errors.required' | t }}</mat-error>
+                } @else if (shippingForm.get('postalCode')?.hasError('pattern')) {
+                  <mat-error>{{ 'errors.postalCode' | t }}</mat-error>
+                }
               </mat-form-field>
             </div>
 
-            <div class="stepper-buttons">
-              <button mat-button (click)="goBack()">
+            <div class="step-actions">
+              <button mat-button type="button" (click)="goBackToCart()">
                 <mat-icon>arrow_back</mat-icon>
-                Volver al Carrito
+                {{ 'checkout.backToCart' | t }}
               </button>
               <button
-                mat-raised-button
-                color="primary"
+                mat-flat-button
+                type="button"
                 matStepperNext
-                [disabled]="shippingForm.invalid"
-              >
-                Siguiente
+                [disabled]="shippingForm.invalid">
+                {{ 'common.next' | t }}
                 <mat-icon>arrow_forward</mat-icon>
               </button>
             </div>
           </form>
         </mat-step>
 
-        <!-- Step 2: Payment Method -->
-        <mat-step [stepControl]="paymentForm" label="Método de Pago">
-          <form [formGroup]="paymentForm">
-            <h2>Método de Pago</h2>
+        <!-- ====================================================== 2. Pago -->
+        <mat-step [stepControl]="paymentForm" [label]="'checkout.steps.payment' | t">
+          <form [formGroup]="paymentForm" class="step-form">
+            <h2>{{ 'checkout.payment.title' | t }}</h2>
 
             <mat-form-field appearance="outline">
-              <mat-label>Selecciona método de pago</mat-label>
+              <mat-label>{{ 'checkout.payment.select' | t }}</mat-label>
               <mat-select formControlName="paymentMethod">
-                <mat-option
-                  *ngFor="let method of paymentMethods"
-                  [value]="method"
-                >
-                  <mat-icon>{{
-                    method === "Tarjeta de Crédito" ||
-                    method === "Tarjeta de Débito"
-                      ? "credit_card"
-                      : method === "PayPal"
-                        ? "account_balance"
-                        : "payments"
-                  }}</mat-icon>
-                  {{ method }}
-                </mat-option>
+                @for (method of paymentMethods; track method) {
+                  <mat-option [value]="method">
+                    <mat-icon class="option-icon">{{ paymentIcon(method) }}</mat-icon>
+                    {{ paymentLabel(method) | t }}
+                  </mat-option>
+                }
               </mat-select>
               <mat-icon matPrefix>payment</mat-icon>
-              <mat-error
-                *ngIf="paymentForm.get('paymentMethod')?.hasError('required')"
-              >
-                Selecciona un método de pago
-              </mat-error>
             </mat-form-field>
 
-            <div class="payment-info">
-              <mat-icon>info</mat-icon>
-              <p>
-                Esta es una aplicación de demostración. No se procesarán pagos
-                reales.
-              </p>
-            </div>
+            <p class="notice">
+              <mat-icon aria-hidden="true">info</mat-icon>
+              {{ 'checkout.payment.demoNotice' | t }}
+            </p>
 
-            <div class="stepper-buttons">
-              <button mat-button matStepperPrevious>
+            <div class="step-actions">
+              <button mat-button type="button" matStepperPrevious>
                 <mat-icon>arrow_back</mat-icon>
-                Atrás
+                {{ 'common.back' | t }}
               </button>
               <button
-                mat-raised-button
-                color="primary"
+                mat-flat-button
+                type="button"
                 matStepperNext
-                [disabled]="paymentForm.invalid"
-              >
-                Siguiente
+                [disabled]="paymentForm.invalid">
+                {{ 'common.next' | t }}
                 <mat-icon>arrow_forward</mat-icon>
               </button>
             </div>
           </form>
         </mat-step>
 
-        <!-- Step 3: Review Order -->
-        <mat-step label="Revisar Pedido">
-          <h2>Resumen del Pedido</h2>
+        <!-- ==================================================== 3. Revisar -->
+        <mat-step [label]="'checkout.steps.review' | t">
+          <div class="step-form">
+            <h2>{{ 'checkout.review.title' | t }}</h2>
 
-          <div class="review-section">
-            <h3><mat-icon>shopping_bag</mat-icon> Productos</h3>
-            <div class="review-items">
-              <div *ngFor="let item of cartState.items" class="review-item">
-                <img
-                  [src]="item.image"
-                  [alt]="item.name"
-                  (error)="
-                    $any($event.target).src = 'assets/images/placeholder.jpg'
-                  "
-                />
-                <div class="review-item-info">
-                  <strong>{{ item.name }}</strong>
-                  <span>Cantidad: {{ item.quantity }}</span>
-                  <span class="item-price"
-                    >${{ item.price | number: "1.2-2" }} x
-                    {{ item.quantity }}</span
-                  >
-                </div>
-                <div class="review-item-total">
-                  ${{ item.price * item.quantity | number: "1.2-2" }}
-                </div>
-              </div>
+            <section class="review-block">
+              <h3>
+                <mat-icon aria-hidden="true">shopping_bag</mat-icon>
+                {{ 'checkout.review.products' | t }}
+              </h3>
+              <ul class="review-items">
+                @for (item of cartState().items; track item.id) {
+                  <li>
+                    <img [src]="item.image" [alt]="item.name" loading="lazy" />
+                    <div class="review-item__info">
+                      <strong>{{ item.name }}</strong>
+                      <span>
+                        ${{ item.price | number: '1.2-2' }} × {{ item.quantity }}
+                      </span>
+                    </div>
+                    <span class="review-item__total">
+                      ${{ item.price * item.quantity | number: '1.2-2' }}
+                    </span>
+                  </li>
+                }
+              </ul>
+            </section>
+
+            <mat-divider></mat-divider>
+
+            <section class="review-block">
+              <h3>
+                <mat-icon aria-hidden="true">local_shipping</mat-icon>
+                {{ 'checkout.review.shippingInfo' | t }}
+              </h3>
+              <address class="review-address">
+                <strong>{{ shippingForm.get('name')?.value }}</strong>
+                <span>{{ shippingForm.get('email')?.value }}</span>
+                <span>{{ shippingForm.get('phone')?.value }}</span>
+                <span>{{ shippingForm.get('address')?.value }}</span>
+                <span>
+                  {{ shippingForm.get('city')?.value }},
+                  {{ shippingForm.get('postalCode')?.value }}
+                </span>
+              </address>
+            </section>
+
+            <mat-divider></mat-divider>
+
+            <section class="review-block">
+              <h3>
+                <mat-icon aria-hidden="true">payment</mat-icon>
+                {{ 'checkout.review.paymentMethod' | t }}
+              </h3>
+              <p>{{ paymentLabel(paymentForm.get('paymentMethod')?.value) | t }}</p>
+            </section>
+
+            <div class="step-actions">
+              <button mat-button type="button" matStepperPrevious [disabled]="submitting()">
+                <mat-icon>arrow_back</mat-icon>
+                {{ 'common.back' | t }}
+              </button>
+              <button
+                mat-flat-button
+                type="button"
+                class="submit-btn"
+                (click)="submitOrder()"
+                [disabled]="submitting()">
+                @if (submitting()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>check_circle</mat-icon>
+                }
+                {{ (submitting() ? 'checkout.submitting' : 'checkout.submit') | t }}
+              </button>
             </div>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <div class="review-section">
-            <h3><mat-icon>local_shipping</mat-icon> Información de Envío</h3>
-            <div class="review-info" *ngIf="shippingForm.valid">
-              <p>
-                <strong>{{ shippingForm.get("name")?.value }}</strong>
-              </p>
-              <p>{{ shippingForm.get("email")?.value }}</p>
-              <p>{{ shippingForm.get("phone")?.value }}</p>
-              <p>{{ shippingForm.get("address")?.value }}</p>
-              <p>
-                {{ shippingForm.get("city")?.value }},
-                {{ shippingForm.get("postalCode")?.value }}
-              </p>
-            </div>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <div class="review-section">
-            <h3><mat-icon>payment</mat-icon> Método de Pago</h3>
-            <div class="review-info" *ngIf="paymentForm.valid">
-              <p>{{ paymentForm.get("paymentMethod")?.value }}</p>
-            </div>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <div class="stepper-buttons">
-            <button mat-button matStepperPrevious>
-              <mat-icon>arrow_back</mat-icon>
-              Atrás
-            </button>
-            <button
-              mat-raised-button
-              color="primary"
-              (click)="submitOrder()"
-              class="submit-btn"
-            >
-              <mat-icon>check_circle</mat-icon>
-              Confirmar Pedido
-            </button>
           </div>
         </mat-step>
       </mat-stepper>
     </div>
 
-    <!-- Order Summary Sidebar -->
-    <div class="order-summary">
+    <!-- ======================================================== Resumen -->
+    <aside class="checkout__summary">
       <mat-card>
-        <mat-card-header>
-          <mat-card-title>Resumen</mat-card-title>
-        </mat-card-header>
+        <h2 class="summary__title">{{ 'checkout.summary.title' | t }}</h2>
 
-        <mat-card-content>
-          <div class="summary-row">
-            <span>Productos ({{ cartState.itemCount }}):</span>
-            <span>${{ cartState.total | number: "1.2-2" }}</span>
+        <div class="summary__row">
+          <span>{{ 'checkout.summary.products' | t: { count: cartState().itemCount } }}</span>
+          <span>${{ totals().subtotal | number: '1.2-2' }}</span>
+        </div>
+
+        @if (appliedCoupon()) {
+          <div class="summary__row summary__row--discount">
+            <span>
+              {{ 'checkout.summary.discount' | t }}
+              ({{ appliedCoupon()!.code }} −{{ appliedCoupon()!.discountPercent }}%)
+            </span>
+            <span>−${{ totals().discount | number: '1.2-2' }}</span>
           </div>
+        }
 
-          <div class="summary-row">
-            <span>Envío:</span>
-            <span class="free">GRATIS</span>
-          </div>
+        <div class="summary__row">
+          <span>{{ 'checkout.summary.shipping' | t }}</span>
+          @if (totals().shippingCost === 0) {
+            <span class="free">{{ 'common.free' | t }}</span>
+          } @else {
+            <span>${{ totals().shippingCost | number: '1.2-2' }}</span>
+          }
+        </div>
 
-          <div class="coupon-box">
-            <mat-form-field
-              appearance="outline"
-              class="coupon-field"
-              *ngIf="!appliedCoupon"
-            >
-              <mat-label>Código de descuento</mat-label>
-              <input
-                matInput
-                [(ngModel)]="couponCode"
-                [ngModelOptions]="{ standalone: true }"
-                placeholder="DESCUENTO10"
-              />
-              <button matSuffix mat-button (click)="applyCoupon()">
-                Aplicar
-              </button>
-            </mat-form-field>
-            <p class="coupon-error" *ngIf="couponError">{{ couponError }}</p>
-
-            <div class="coupon-applied" *ngIf="appliedCoupon">
-              <mat-icon>local_offer</mat-icon>
-              <span
-                >{{ appliedCoupon.code }} (-{{
-                  appliedCoupon.discountPercent
-                }}%)</span
-              >
-              <button mat-icon-button (click)="removeCoupon()">
+        <!-- ------------------------------------------------------ Cupón -->
+        <div class="coupon">
+          @if (appliedCoupon()) {
+            <div class="coupon__applied">
+              <mat-icon aria-hidden="true">local_offer</mat-icon>
+              <span>{{ appliedCoupon()!.code }}</span>
+              <button
+                mat-icon-button
+                (click)="removeCoupon()"
+                [attr.aria-label]="'checkout.coupon.remove' | t">
                 <mat-icon>close</mat-icon>
               </button>
             </div>
-          </div>
+          } @else {
+            <div class="coupon__form">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{ 'checkout.coupon.placeholder' | t }}</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="couponCode"
+                  [ngModelOptions]="{ standalone: true }"
+                  (keydown.enter)="applyCoupon()"
+                  placeholder="DESCUENTO10" />
+              </mat-form-field>
+              <button
+                mat-stroked-button
+                (click)="applyCoupon()"
+                [disabled]="!couponCode.trim() || validatingCoupon()">
+                @if (validatingCoupon()) {
+                  <mat-spinner diameter="18"></mat-spinner>
+                } @else {
+                  {{ 'checkout.coupon.apply' | t }}
+                }
+              </button>
+            </div>
 
-          <div class="summary-row" *ngIf="appliedCoupon">
-            <span>Descuento:</span>
-            <span class="free">-${{ discountAmount | number: "1.2-2" }}</span>
-          </div>
+            @if (couponError()) {
+              <p class="coupon__error" role="alert">{{ couponError() }}</p>
+            } @else {
+              <p class="coupon__hint">{{ 'checkout.coupon.hint' | t }}</p>
+            }
+          }
+        </div>
 
-          <mat-divider></mat-divider>
+        <mat-divider></mat-divider>
 
-          <div class="summary-row total">
-            <span>Total:</span>
-            <span>${{ finalTotal | number: "1.2-2" }}</span>
-          </div>
-        </mat-card-content>
+        <div class="summary__row summary__row--total">
+          <span>{{ 'checkout.summary.total' | t }}</span>
+          <span>${{ totals().total | number: '1.2-2' }}</span>
+        </div>
       </mat-card>
 
-      <mat-card class="security-info">
-        <mat-icon>security</mat-icon>
-        <h4>Compra Segura</h4>
-        <p>Tus datos están protegidos con encriptación SSL</p>
+      <mat-card class="security">
+        <mat-icon aria-hidden="true">shield</mat-icon>
+        <div>
+          <h3>{{ 'checkout.security.title' | t }}</h3>
+          <p>{{ 'checkout.security.text' | t }}</p>
+        </div>
       </mat-card>
-    </div>
+    </aside>
   </div>
 </div>

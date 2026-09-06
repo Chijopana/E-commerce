@@ -2,8 +2,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  avatar?: string;
-  wishlist: number[]; // array of product IDs
+  avatar?: string | null;
 }
 
 export interface AuthState {
@@ -20,4 +19,10 @@ export interface RegisterData {
   email: string;
   password: string;
   name: string;
+}
+
+/** Lo que devuelven /auth/login y /auth/register. */
+export interface AuthResponse {
+  accessToken: string;
+  user: User;
 }

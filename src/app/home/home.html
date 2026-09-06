@@ -1,187 +1,191 @@
-<div class="home-container">
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="hero-content">
-      <div class="hero-text">
-        <h1 class="hero-title">
-          Bienvenido a Mi E-Commerce
-        </h1>
-        <p class="hero-subtitle">
-          Encuentra los mejores productos con calidad garantizada y los mejores precios del mercado
-        </p>
-        <div class="hero-buttons">
-          <button mat-raised-button color="primary" (click)="navigateToProducts()" class="primary-cta">
+<div class="home">
+  <!-- ================================================================ HERO -->
+  <section class="hero">
+    <div class="hero__content">
+      <div class="hero__text">
+        <span class="hero__badge">
+          <mat-icon aria-hidden="true">local_shipping</mat-icon>
+          {{ 'home.hero.badge' | t }}
+        </span>
+
+        <h1>{{ 'home.hero.title' | t }}</h1>
+        <p>{{ 'home.hero.subtitle' | t }}</p>
+
+        <div class="hero__actions">
+          <button mat-flat-button class="hero__cta" (click)="goToProducts()">
             <mat-icon>storefront</mat-icon>
-            Explorar Productos
+            {{ 'home.hero.cta' | t }}
           </button>
-          <button mat-stroked-button class="secondary-cta" (click)="scrollToFeatures()">
-            <mat-icon>info</mat-icon>
-            Más Información
+          <button mat-stroked-button class="hero__secondary" (click)="scrollToCategories()">
+            <mat-icon>expand_more</mat-icon>
+            {{ 'home.hero.secondary' | t }}
           </button>
         </div>
       </div>
-      <div class="hero-image">
-        <mat-icon class="hero-icon">shopping_bag</mat-icon>
+
+      <div class="hero__art" aria-hidden="true">
+        <mat-icon>shopping_bag</mat-icon>
       </div>
     </div>
   </section>
 
-  <!-- Categories Section -->
-  <section class="categories-section">
-    <h2 class="section-title">
-      <mat-icon class="title-icon">category</mat-icon>
-      Explora por Categorías
-    </h2>
-    <div class="categories-grid">
-      <mat-card 
-        *ngFor="let category of categories" 
-        class="category-card"
-        (click)="navigateToProducts(category.value)">
-        <div class="category-icon" [style.background-color]="category.color">
-          <mat-icon>{{ category.icon }}</mat-icon>
-        </div>
-        <h3>{{ category.name }}</h3>
-        <button mat-button color="primary">
-          Ver Productos
-          <mat-icon>arrow_forward</mat-icon>
+  <!-- ========================================================== CATEGORÍAS -->
+  <section class="section categories">
+    <header class="section__head">
+      <h2>{{ 'home.categories.title' | t }}</h2>
+      <p>{{ 'home.categories.subtitle' | t }}</p>
+    </header>
+
+    <div class="categories__grid">
+      @for (category of categories; track category.value) {
+        <button type="button" class="category-card" (click)="goToProducts(category.value)">
+          <span class="category-card__icon">
+            <mat-icon>{{ category.icon }}</mat-icon>
+          </span>
+          <h3>{{ category.key | t }}</h3>
+          <span class="category-card__link">
+            {{ 'home.categories.action' | t }}
+            <mat-icon>arrow_forward</mat-icon>
+          </span>
         </button>
-      </mat-card>
+      }
     </div>
   </section>
 
-  <!-- Featured Products Section -->
-  <section class="featured-section" *ngIf="featuredProducts.length > 0">
-    <h2 class="section-title">
-      <mat-icon class="title-icon">star</mat-icon>
-      Productos Destacados
-    </h2>
-    <div class="featured-grid">
-      <mat-card *ngFor="let product of featuredProducts" class="product-card" (click)="navigateToProduct(product.id)">
-        <div class="product-image-container">
-          <div class="product-image">
-            <mat-icon>image</mat-icon>
+  <!-- =========================================================== DESTACADOS -->
+  <section class="section featured">
+    <header class="section__head">
+      <h2>{{ 'home.featured.title' | t }}</h2>
+      <p>{{ 'home.featured.subtitle' | t }}</p>
+    </header>
+
+    <div class="product-grid">
+      @if (loading()) {
+        @for (item of skeletons; track item) {
+          <div class="card-skeleton">
+            <div class="skeleton card-skeleton__image"></div>
+            <div class="skeleton card-skeleton__line"></div>
+            <div class="skeleton card-skeleton__line short"></div>
+            <div class="skeleton card-skeleton__button"></div>
           </div>
-        </div>
-        <div class="product-content">
-          <h3 class="product-name">{{ product.name }}</h3>
-          <p class="product-category">{{ product.category }}</p>
-          <div class="product-rating">
-            <mat-icon class="star-filled">star</mat-icon>
-            <span>{{ product.rating || 5 }}/5</span>
-          </div>
-          <div class="product-price">
-            <span class="price">${{ product.price.toFixed(2) }}</span>
-          </div>
-          <button mat-raised-button color="primary" class="add-to-cart-btn" (click)="addToCart(product); $event.stopPropagation()">
-            <mat-icon>shopping_cart</mat-icon>
-            Agregar
-          </button>
-        </div>
-      </mat-card>
+        }
+      } @else {
+        @for (product of featuredProducts(); track product.id) {
+          <app-product-card
+            [product]="product"
+            [showWishlist]="isAuthenticated()"
+            [inWishlist]="wishlistIds().includes(product.id)"
+            (add)="addToCart($event)"
+            (wishlistToggle)="toggleWishlist($event)" />
+        }
+      }
     </div>
-    <div class="featured-cta">
-      <button mat-raised-button color="primary" (click)="navigateToProducts()" class="view-all-btn">
-        Ver Todos los Productos
+
+    <div class="featured__cta">
+      <button mat-stroked-button (click)="goToProducts()">
+        {{ 'home.featured.viewAll' | t }}
         <mat-icon>arrow_forward</mat-icon>
       </button>
     </div>
   </section>
 
-  <!-- Stats Section -->
-  <section class="stats-section">
-    <h2 class="section-title">
-      <mat-icon class="title-icon">trending_up</mat-icon>
-      Nuestros Números
-    </h2>
-    <div class="stats-container">
-      <div class="stat">
-        <mat-icon class="stat-icon">inventory_2</mat-icon>
-        <div class="stat-number">100+</div>
-        <div class="stat-label">Productos</div>
-      </div>
-      <div class="stat">
-        <mat-icon class="stat-icon">groups</mat-icon>
-        <div class="stat-number">1000+</div>
-        <div class="stat-label">Clientes Felices</div>
-      </div>
-      <div class="stat">
-        <mat-icon class="stat-icon">support_agent</mat-icon>
-        <div class="stat-number">24/7</div>
-        <div class="stat-label">Soporte</div>
-      </div>
-      <div class="stat">
-        <mat-icon class="stat-icon">thumb_up</mat-icon>
-        <div class="stat-number">98%</div>
-        <div class="stat-label">Satisfacción</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section class="features-section">
-    <h2 class="section-title">
-      <mat-icon class="title-icon">verified</mat-icon>
-      ¿Por qué elegirnos?
-    </h2>
-    <div class="features-grid">
-      <mat-card *ngFor="let feature of features" class="feature-card">
-        <div class="feature-icon">
-          <mat-icon>{{ feature.icon }}</mat-icon>
+  <!-- =============================================================== CIFRAS -->
+  <section class="section stats">
+    <div class="stats__grid">
+      @for (stat of stats; track stat.key) {
+        <div class="stat">
+          <mat-icon aria-hidden="true">{{ stat.icon }}</mat-icon>
+          <span class="stat__value">{{ stat.value }}</span>
+          <span class="stat__label">{{ stat.key | t }}</span>
         </div>
-        <h3>{{ feature.title }}</h3>
-        <p>{{ feature.description }}</p>
-      </mat-card>
+      }
     </div>
   </section>
 
-  <!-- Testimonials Section -->
-  <section class="testimonials-section">
-    <h2 class="section-title">
-      <mat-icon class="title-icon">rate_review</mat-icon>
-      Lo Que Dicen Nuestros Clientes
-    </h2>
-    <div class="testimonials-grid">
-      <mat-card *ngFor="let testimonial of testimonials" class="testimonial-card">
-        <div class="testimonial-header">
-          <mat-icon class="testimonial-avatar">{{ testimonial.image }}</mat-icon>
-          <div class="testimonial-info">
-            <h4>{{ testimonial.name }}</h4>
-            <div class="testimonial-rating">
-              <mat-icon *ngFor="let star of [1,2,3,4,5]" class="star-filled">star</mat-icon>
-            </div>
+  <!-- ============================================================ VENTAJAS -->
+  <section class="section features">
+    <header class="section__head">
+      <h2>{{ 'home.features.title' | t }}</h2>
+    </header>
+
+    <div class="features__grid">
+      @for (feature of features; track feature.key) {
+        <mat-card class="feature-card">
+          <span class="feature-card__icon">
+            <mat-icon>{{ feature.icon }}</mat-icon>
+          </span>
+          <h3>{{ 'home.features.' + feature.key + '.title' | t }}</h3>
+          <p>{{ 'home.features.' + feature.key + '.desc' | t }}</p>
+        </mat-card>
+      }
+    </div>
+  </section>
+
+  <!-- ========================================================= TESTIMONIOS -->
+  <section class="section testimonials">
+    <header class="section__head">
+      <h2>{{ 'home.testimonials.title' | t }}</h2>
+    </header>
+
+    <div class="testimonials__grid">
+      @for (testimonial of testimonials; track testimonial.name) {
+        <mat-card class="testimonial">
+          <div class="testimonial__stars" aria-label="5 / 5">
+            @for (star of [1, 2, 3, 4, 5]; track star) {
+              <mat-icon aria-hidden="true">star</mat-icon>
+            }
           </div>
-        </div>
-        <p class="testimonial-text">{{ testimonial.comment }}</p>
-      </mat-card>
+          <p class="testimonial__text">{{ testimonial.comment }}</p>
+          <div class="testimonial__author">
+            <mat-icon aria-hidden="true">account_circle</mat-icon>
+            <span>{{ testimonial.name }}</span>
+          </div>
+        </mat-card>
+      }
     </div>
   </section>
 
-  <!-- Promotion Banner Section -->
-  <section class="promotion-section">
-    <div class="promotion-content">
-      <div class="promotion-text">
-        <h2>Suscríbete a Nuestro Newsletter</h2>
-        <p>Recibe ofertas exclusivas, descuentos especiales y las últimas novedades directo en tu correo</p>
+  <!-- =========================================================== NEWSLETTER -->
+  <section class="section newsletter">
+    <div class="newsletter__inner">
+      <div class="newsletter__text">
+        <h2>{{ 'home.newsletter.title' | t }}</h2>
+        <p>{{ 'home.newsletter.subtitle' | t }}</p>
       </div>
-      <div class="promotion-form">
-        <input type="email" placeholder="Tu correo electrónico" class="email-input">
-        <button mat-raised-button class="subscribe-btn">
+
+      <form class="newsletter__form" (ngSubmit)="subscribeNewsletter()">
+        <label class="visually-hidden" for="newsletter-email">
+          {{ 'home.newsletter.placeholder' | t }}
+        </label>
+        <input
+          id="newsletter-email"
+          type="email"
+          name="newsletterEmail"
+          [(ngModel)]="newsletterEmail"
+          [placeholder]="'home.newsletter.placeholder' | t"
+          [attr.aria-invalid]="!!newsletterError()"
+          [attr.aria-describedby]="newsletterError() ? 'newsletter-error' : null" />
+        <button mat-flat-button type="submit">
           <mat-icon>mail</mat-icon>
-          Suscribirse
+          {{ 'home.newsletter.cta' | t }}
         </button>
-      </div>
+      </form>
+
+      @if (newsletterError()) {
+        <p class="newsletter__error" id="newsletter-error" role="alert">
+          {{ newsletterError() }}
+        </p>
+      }
     </div>
   </section>
 
-  <!-- CTA Section -->
-  <section class="cta-section">
-    <div class="cta-content">
-      <h2>¿Listo para comenzar?</h2>
-      <p>Descubre nuestra amplia selección de productos de alta calidad</p>
-      <button mat-raised-button (click)="navigateToProducts()" class="cta-button">
-        <mat-icon>rocket_launch</mat-icon>
-        Comenzar Ahora
-      </button>
-    </div>
+  <!-- ================================================================= CTA -->
+  <section class="section cta">
+    <h2>{{ 'home.cta.title' | t }}</h2>
+    <p>{{ 'home.cta.subtitle' | t }}</p>
+    <button mat-flat-button class="cta__button" (click)="goToProducts()">
+      <mat-icon>rocket_launch</mat-icon>
+      {{ 'home.cta.button' | t }}
+    </button>
   </section>
 </div>

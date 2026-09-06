@@ -1,123 +1,39 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { Order, OrderStatus, ShippingInfo, PaymentMethod } from '../models/order.model';
-import { CartItem } from '../models/cart.model';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { CreateOrderRequest, Order } from '../models/order.model';
+import { environment } from '../../environments/environment';
 
+/**
+ * Pedidos contra la API.
+ *
+ * El servidor no acepta precios ni totales del cliente: solo `productId` y
+ * `quantity`. Recalcula el importe desde la base de datos, comprueba el stock
+ * y lo descuenta en una transaccion. Este servicio es un envoltorio fino a
+ * proposito; toda la logica de negocio esta del lado del servidor, que es el
+ * unico sitio donde no se puede manipular.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class OrderService {
-  private readonly STORAGE_KEY = 'ecommerce_orders';
-  
-  private ordersSubject = new BehaviorSubject<Order[]>([]);
-  public orders$ = this.ordersSubject.asObservable();
+  private http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiUrl}/orders`;
 
-  constructor() {
-    this.loadOrders();
+  createOrder(request: CreateOrderRequest): Observable<Order> {
+    return this.http.post<Order>(this.baseUrl, request);
   }
 
-  private loadOrders(): void {
-    const saved = localStorage.getItem(this.STORAGE_KEY);
-    if (saved) {
-      try {
-        const orders = JSON.parse(saved);
-        // Convert date strings back to Date objects
-        orders.forEach((order: Order) => {
-          order.createdAt = new Date(order.createdAt);
-          order.estimatedDelivery = new Date(order.estimatedDelivery);
-        });
-        this.ordersSubject.next(orders);
-      } catch (error) {
-        console.error('Error loading orders:', error);
-      }
-    }
+  /** El servidor filtra por el usuario del token; no se le pasa ningun id. */
+  getMyOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(this.baseUrl);
   }
 
-  private saveOrders(orders: Order[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(orders));
-    this.ordersSubject.next(orders);
+  getOrderById(id: string): Observable<Order> {
+    return this.http.get<Order>(`${this.baseUrl}/${id}`);
   }
 
-createOrder(
-  userId: number,
-  items: CartItem[],
-  shippingInfo: ShippingInfo,
-  paymentMethod: PaymentMethod,
-  totalOverride?: number
-): Observable<Order> {
-  return new Observable(observer => {
-    const orders = this.ordersSubject.value;
-
-    const total = totalOverride ?? items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
-
-    const newOrder: Order = {
-      id: this.generateOrderId(),
-      userId,
-      items: [...items],
-      total,
-      status: OrderStatus.PENDING,
-      shippingInfo,
-      paymentMethod,
-      createdAt: new Date(),
-      estimatedDelivery,
-    };
-
-    orders.unshift(newOrder);
-    this.saveOrders(orders);
-
-    observer.next(newOrder);
-    observer.complete();
-  });
-}
-
-  getOrdersByUserId(userId: number): Observable<Order[]> {
-    return new Observable(observer => {
-      const userOrders = this.ordersSubject.value.filter(o => o.userId === userId);
-      observer.next(userOrders);
-      observer.complete();
-    });
-  }
-
-  getOrderById(orderId: string): Observable<Order | undefined> {
-    return new Observable(observer => {
-      const order = this.ordersSubject.value.find(o => o.id === orderId);
-      observer.next(order);
-      observer.complete();
-    });
-  }
-
-  updateOrderStatus(orderId: string, status: OrderStatus): void {
-    const orders = this.ordersSubject.value;
-    const orderIndex = orders.findIndex(o => o.id === orderId);
-    
-    if (orderIndex !== -1) {
-      orders[orderIndex].status = status;
-      this.saveOrders([...orders]);
-    }
-  }
-
-  cancelOrder(orderId: string): Observable<boolean> {
-    return new Observable(observer => {
-      const orders = this.ordersSubject.value;
-      const orderIndex = orders.findIndex(o => o.id === orderId);
-      
-      if (orderIndex !== -1) {
-        orders[orderIndex].status = OrderStatus.CANCELLED;
-        this.saveOrders([...orders]);
-        observer.next(true);
-      } else {
-        observer.next(false);
-      }
-      
-      observer.complete();
-    });
-  }
-
-  private generateOrderId(): string {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 10000);
-    return `ORD-${timestamp}-${random}`;
+  cancelOrder(id: string): Observable<Order> {
+    return this.http.patch<Order>(`${this.baseUrl}/${id}/cancel`, {});
   }
 }

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+
+# La base de datos local y los .env nunca se suben.
+*.db
+*.db-journal
+.env

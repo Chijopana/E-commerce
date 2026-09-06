@@ -1,0 +1,163 @@
+// Esquema de la tienda.
+//
+// Dos decisiones que recorren todo el fichero:
+//
+// 1. El dinero se guarda en CÉNTIMOS como entero (`priceCents`, `totalCents`…).
+//    Un Float para dinero acumula errores de redondeo (0.1 + 0.2 !== 0.3) y
+//    SQLite no tiene tipo decimal. La conversión a euros/dólares se hace en el
+//    borde de la API, en un solo sitio (`src/common/money.ts`).
+//
+// 2. Las líneas de pedido guardan una FOTO del producto (nombre, precio,
+//    imagen) en vez de depender de la relación. Si mañana sube el precio o se
+//    retira el producto, el pedido tiene que seguir mostrando lo que se cobró.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // SQLite para que el proyecto arranque tras un `git clone` sin instalar
+  // ningún servidor. Cambiar a Postgres es cambiar este provider y la URL:
+  // el resto del código es idéntico porque va todo por Prisma.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  // Hash bcrypt. La contraseña en claro no se guarda ni se devuelve nunca.
+  password  String
+  name      String
+  avatar    String?
+  role      String   @default("USER") // USER | ADMIN
+  createdAt DateTime @default(now())
+
+  orders   Order[]
+  reviews  Review[]
+  wishlist WishlistItem[]
+
+  @@map("users")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  priceCents  Int
+  image       String
+  stock       Int      @default(0)
+  category    String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Media denormalizada: se recalcula dentro de la misma transacción que
+  // inserta la reseña. Evita agregar sobre `reviews` en cada listado.
+  ratingAvg   Float @default(0)
+  ratingCount Int   @default(0)
+
+  reviews    Review[]
+  orderItems OrderItem[]
+  wishlist   WishlistItem[]
+
+  @@index([category])
+  @@index([priceCents])
+  @@map("products")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  userId    Int
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Una reseña por persona y producto: sin esto, una misma cuenta podía
+  // inflar la nota media repitiendo opiniones.
+  @@unique([productId, userId])
+  @@index([productId])
+  @@map("reviews")
+}
+
+model Order {
+  id     String @id
+  userId Int
+  status String @default("PENDING") // PENDING | PROCESSING | SHIPPED | DELIVERED | CANCELLED
+
+  // Desglose completo: sin él no se puede reconstruir por qué se cobró ese
+  // total (era justo el agujero que tenía la versión con localStorage).
+  subtotalCents Int
+  discountCents Int @default(0)
+  shippingCents Int @default(0)
+  totalCents    Int
+
+  couponCode    String?
+  paymentMethod String
+
+  shippingName       String
+  shippingEmail      String
+  shippingPhone      String
+  shippingAddress    String
+  shippingCity       String
+  shippingPostalCode String
+
+  createdAt         DateTime @default(now())
+  estimatedDelivery DateTime
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int    @id @default(autoincrement())
+  orderId   String
+  productId Int?
+
+  // Foto del producto en el momento de la compra.
+  name       String
+  priceCents Int
+  quantity   Int
+  image      String
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // `SetNull`: si se borra un producto del catálogo, el pedido sobrevive
+  // con sus datos congelados en vez de desaparecer en cascada.
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Coupon {
+  id              Int       @id @default(autoincrement())
+  code            String    @unique
+  discountPercent Int
+  active          Boolean   @default(true)
+  expiresAt       DateTime?
+  maxUses         Int?
+  uses            Int       @default(0)
+
+  @@map("coupons")
+}
+
+model WishlistItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("wishlist_items")
+}

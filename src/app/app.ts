@@ -1,6 +1,5 @@
-import { Component, inject, DestroyRef } from '@angular/core';
+import { Component, inject, DestroyRef, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,20 +7,23 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
 import { AuthService } from './services/auth.service';
 import { CartService } from './services/cart.service';
 import { WishlistService } from './services/wishlist.service';
-import Swal from 'sweetalert2';
+import { NotificationService } from './services/notification.service';
+import { TranslationService, SUPPORTED_LANGS, Lang } from './services/translation.service';
 import { ThemeToggleComponent } from './components/theme-toggle.component';
-import { TranslationService } from './services/translation.service';
 import { SearchBarComponent } from './components/search-bar.component';
 import { SupportChatComponent } from './components/support-chat.component';
+import { AppFooterComponent } from './components/app-footer.component';
+import { TranslatePipe } from './i18n/translate.pipe';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
@@ -30,65 +32,73 @@ import { SupportChatComponent } from './components/support-chat.component';
     MatIconModule,
     MatBadgeModule,
     MatMenuModule,
+    MatDividerModule,
+    MatTooltipModule,
     ThemeToggleComponent,
     SearchBarComponent,
     SupportChatComponent,
-    MatDividerModule
+    AppFooterComponent,
+    TranslatePipe,
   ],
   templateUrl: './app.html',
   styleUrls: ['./app.css'],
 })
 export class App {
-  cartItemCount = 0;
-  wishlistCount = 0;
-  isAuthenticated = false;
-  userName = '';
-  t = inject(TranslationService);
-
   private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
+  private cartService = inject(CartService);
+  private wishlistService = inject(WishlistService);
+  private notifications = inject(NotificationService);
 
-  constructor(
-    public authService: AuthService,
-    private cartService: CartService,
-    private wishlistService: WishlistService,
-    private router: Router
-  ) {
+  readonly authService = inject(AuthService);
+  readonly translation = inject(TranslationService);
+  readonly languages = SUPPORTED_LANGS;
+
+  readonly cartItemCount = signal(0);
+  readonly wishlistCount = signal(0);
+  readonly isAuthenticated = signal(false);
+  readonly userName = signal('');
+
+  /** Buscador desplegado en móvil, donde no cabe fijo en la barra. */
+  readonly searchOpen = signal(false);
+
+  constructor() {
     this.cartService.cartState$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(state => { this.cartItemCount = state.itemCount; });
+      .subscribe(state => this.cartItemCount.set(state.itemCount));
 
     this.wishlistService.wishlist$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(wishlist => { this.wishlistCount = wishlist.length; });
+      .subscribe(wishlist => this.wishlistCount.set(wishlist.length));
 
     this.authService.authState$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(state => {
-        this.isAuthenticated = state.isAuthenticated;
-        this.userName = state.user?.name || '';
+        this.isAuthenticated.set(state.isAuthenticated);
+        this.userName.set(state.user?.name ?? '');
       });
   }
 
-  logout(): void {
-    Swal.fire({
-      title: '¿Cerrar sesión?',
-      text: '¿Estás seguro de que quieres cerrar sesión?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.authService.logout();
-        this.router.navigate(['/home']);
-        Swal.fire({
-          icon: 'success',
-          title: 'Sesión cerrada',
-          text: 'Has cerrado sesión correctamente',
-          timer: 2000,
-          showConfirmButton: false,
-        });
-      }
+  toggleSearch(): void {
+    this.searchOpen.update(open => !open);
+  }
+
+  setLang(lang: Lang): void {
+    void this.translation.setLang(lang);
+  }
+
+  async logout(): Promise<void> {
+    const confirmed = await this.notifications.confirm({
+      title: this.translation.translate('auth.confirm.logoutTitle'),
+      text: this.translation.translate('auth.confirm.logoutText'),
+      confirmText: this.translation.translate('nav.logout'),
+      cancelText: this.translation.translate('common.cancel'),
     });
+
+    if (!confirmed) return;
+
+    this.authService.logout();
+    await this.router.navigate(['/home']);
+    this.notifications.success(this.translation.translate('auth.toast.loggedOut'));
   }
 }

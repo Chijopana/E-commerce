@@ -1,161 +1,210 @@
-<div class="detail-container" *ngIf="!loading && product">
-  <button mat-button class="back-btn" (click)="goBack()">
-    <mat-icon>arrow_back</mat-icon>
-    Volver a Productos
-  </button>
-
-  <div class="detail-main">
-    <!-- Imagen -->
-    <div class="detail-image-wrap">
-      <img
-        [src]="product.image"
-        [alt]="product.name"
-        (error)="$any($event.target).src='https://placehold.co/600x600/e0e0e0/666?text=Imagen+No+Disponible'">
-      <div class="stock-badge" [class.out-of-stock]="product.stock === 0">
-        <mat-icon>{{ product.stock > 0 ? 'check_circle' : 'cancel' }}</mat-icon>
-        <span>{{ product.stock > 0 ? 'Disponible' : 'Agotado' }}</span>
-      </div>
-    </div>
-
-    <!-- Info -->
-    <div class="detail-info">
-      <mat-chip-set class="category-chip">
-        <mat-chip>{{ product.category }}</mat-chip>
-      </mat-chip-set>
-
-      <h1>{{ product.name }}</h1>
-
-      <div class="detail-rating">
-        <mat-icon class="star-icon" *ngFor="let star of [1,2,3,4,5]">
-          {{ product.rating >= star ? 'star' : (product.rating >= star - 0.5 ? 'star_half' : 'star_outline') }}
-        </mat-icon>
-        <span>{{ product.rating }} ({{ product.reviews.length }} reseñas)</span>
-      </div>
-
-      <p class="detail-description">{{ product.description }}</p>
-
-      <div class="detail-price">${{ product.price | number:'1.2-2' }}</div>
-
-      <div class="stock-info" *ngIf="product.stock > 0 && product.stock <= 5">
-        <mat-icon>warning</mat-icon>
-        <span>¡Solo quedan {{ product.stock }} unidades!</span>
-      </div>
-
-      <div class="detail-actions">
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="addToCart()"
-          [disabled]="product.stock === 0"
-          class="add-to-cart-btn">
-          <mat-icon>shopping_cart</mat-icon>
-          {{ product.stock > 0 ? 'Añadir al Carrito' : 'Agotado' }}
-        </button>
-
-        <button
-          mat-icon-button
-          class="wishlist-btn"
-          [class.in-wishlist]="isInWishlist(product.id)"
-          (click)="toggleWishlist()">
-          <mat-icon>{{ isInWishlist(product.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
-        </button>
+@if (loading()) {
+  <div class="detail">
+    <div class="detail__main">
+      <div class="skeleton detail-skeleton__image"></div>
+      <div class="detail-skeleton__info">
+        <div class="skeleton line short"></div>
+        <div class="skeleton line tall"></div>
+        <div class="skeleton line"></div>
+        <div class="skeleton line"></div>
+        <div class="skeleton line short"></div>
       </div>
     </div>
   </div>
+} @else if (notFound()) {
+  <div class="empty-state not-found">
+    <mat-icon>search_off</mat-icon>
+    <h1>{{ 'detail.notFound.title' | t }}</h1>
+    <p>{{ 'detail.notFound.subtitle' | t }}</p>
+    <button mat-flat-button routerLink="/products">
+      <mat-icon>storefront</mat-icon>
+      {{ 'detail.notFound.action' | t }}
+    </button>
+  </div>
+} @else if (product(); as item) {
+  <div class="detail">
+    <button mat-button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      {{ 'detail.back' | t }}
+    </button>
 
-  <mat-divider></mat-divider>
+    <!-- ============================================================ FICHA -->
+    <div class="detail__main">
+      <div class="detail__image">
+        <img
+          [src]="item.image"
+          [alt]="item.name"
+          decoding="async"
+          (error)="onImageError($event)" />
 
-  <!-- Reseñas -->
-  <section class="reviews-section">
-    <h2>
-      <mat-icon>rate_review</mat-icon>
-      Reseñas ({{ product.reviews.length }})
-    </h2>
+        <span class="stock-badge" [class.out]="item.stock === 0">
+          <mat-icon aria-hidden="true">{{ item.stock > 0 ? 'check_circle' : 'cancel' }}</mat-icon>
+          {{ (item.stock > 0 ? 'products.card.available' : 'products.card.soldOut') | t }}
+        </span>
+      </div>
 
-    <div class="reviews-list" *ngIf="product.reviews.length > 0">
-      <div class="review-item" *ngFor="let review of product.reviews">
-        <div class="review-header">
-          <strong>{{ review.userName }}</strong>
-          <div class="review-stars">
-            <mat-icon class="star-icon" *ngFor="let star of [1,2,3,4,5]">
-              {{ review.rating >= star ? 'star' : 'star_outline' }}
-            </mat-icon>
-          </div>
+      <div class="detail__info">
+        <span class="category">{{ categoryLabel() | t }}</span>
+        <h1>{{ item.name }}</h1>
+
+        <div class="rating">
+          @for (star of stars; track star) {
+            <mat-icon class="star" aria-hidden="true">{{ starIcon(star, item.rating) }}</mat-icon>
+          }
+          <span>
+            @if (item.reviews.length > 0) {
+              {{ item.rating }} · {{ 'products.card.reviews' | t: { count: item.reviews.length } }}
+            } @else {
+              {{ 'products.card.noReviews' | t }}
+            }
+          </span>
         </div>
-        <p>{{ review.comment }}</p>
-        <span class="review-date">{{ review.date | date:'mediumDate' }}</span>
+
+        <p class="description">{{ item.description }}</p>
+
+        <p class="price">${{ item.price | number: '1.2-2' }}</p>
+
+        @if (item.stock === 0) {
+          <p class="stock-line out">
+            <mat-icon aria-hidden="true">cancel</mat-icon>
+            {{ 'detail.soldOut' | t }}
+          </p>
+        } @else if (item.stock <= 5) {
+          <p class="stock-line low">
+            <mat-icon aria-hidden="true">bolt</mat-icon>
+            {{ 'detail.stockLow' | t: { count: item.stock } }}
+          </p>
+        } @else {
+          <p class="stock-line">
+            <mat-icon aria-hidden="true">inventory_2</mat-icon>
+            {{ 'detail.stockAvailable' | t: { count: item.stock } }}
+          </p>
+        }
+
+        <div class="detail__actions">
+          <div class="qty" role="group" [attr.aria-label]="'common.quantity' | t">
+            <button
+              mat-icon-button
+              (click)="decreaseQuantity()"
+              [disabled]="quantity() <= 1 || item.stock === 0"
+              [attr.aria-label]="'cart.item.decrease' | t">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <span class="qty__value" aria-live="polite">{{ quantity() }}</span>
+            <button
+              mat-icon-button
+              (click)="increaseQuantity()"
+              [disabled]="quantity() >= item.stock"
+              [attr.aria-label]="'cart.item.increase' | t">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+
+          <button
+            mat-flat-button
+            class="add-btn"
+            [disabled]="item.stock === 0"
+            (click)="addToCart()">
+            <mat-icon>shopping_cart</mat-icon>
+            {{ (item.stock > 0 ? 'detail.addToCart' : 'detail.soldOut') | t }}
+          </button>
+
+          <button
+            mat-icon-button
+            class="wishlist-btn"
+            [class.active]="inWishlist()"
+            (click)="toggleWishlist()"
+            [matTooltip]="
+              (inWishlist() ? 'products.card.removeWishlist' : 'products.card.addWishlist') | t
+            "
+            [attr.aria-label]="
+              (inWishlist() ? 'products.card.removeWishlist' : 'products.card.addWishlist') | t
+            "
+            [attr.aria-pressed]="inWishlist()">
+            <mat-icon>{{ inWishlist() ? 'favorite' : 'favorite_border' }}</mat-icon>
+          </button>
+        </div>
       </div>
     </div>
 
-    <p class="no-reviews" *ngIf="product.reviews.length === 0">
-      Todavía no hay reseñas. ¡Sé el primero en opinar!
-    </p>
+    <mat-divider></mat-divider>
 
-    <!-- Formulario de reseña -->
-    <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="review-form">
-      <h3>Deja tu reseña</h3>
+    <!-- ========================================================== RESEÑAS -->
+    <section class="reviews">
+      <h2>
+        <mat-icon aria-hidden="true">rate_review</mat-icon>
+        {{ 'detail.reviews.title' | t: { count: item.reviews.length } }}
+      </h2>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Calificación</mat-label>
-        <mat-select formControlName="rating">
-          <mat-option [value]="5">5 - Excelente</mat-option>
-          <mat-option [value]="4">4 - Muy bueno</mat-option>
-          <mat-option [value]="3">3 - Bueno</mat-option>
-          <mat-option [value]="2">2 - Regular</mat-option>
-          <mat-option [value]="1">1 - Malo</mat-option>
-        </mat-select>
-      </mat-form-field>
+      @if (item.reviews.length > 0) {
+        <ul class="reviews__list">
+          @for (review of item.reviews; track review.id) {
+            <li class="review">
+              <div class="review__head">
+                <strong>{{ review.userName }}</strong>
+                <div class="review__stars" [attr.aria-label]="review.rating + ' / 5'">
+                  @for (star of stars; track star) {
+                    <mat-icon aria-hidden="true">
+                      {{ review.rating >= star ? 'star' : 'star_outline' }}
+                    </mat-icon>
+                  }
+                </div>
+              </div>
+              <p class="review__text">{{ review.comment }}</p>
+              <time class="review__date">{{ review.date | date: 'mediumDate' : '' : locale }}</time>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="reviews__empty">{{ 'detail.reviews.empty' | t }}</p>
+      }
 
-      <mat-form-field appearance="outline">
-        <mat-label>Comentario</mat-label>
-        <textarea matInput formControlName="comment" rows="3" placeholder="¿Qué te pareció el producto?"></textarea>
-        <mat-error *ngIf="reviewForm.get('comment')?.hasError('required')">
-          El comentario es obligatorio
-        </mat-error>
-        <mat-error *ngIf="reviewForm.get('comment')?.hasError('minlength')">
-          Mínimo 5 caracteres
-        </mat-error>
-      </mat-form-field>
+      <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="review-form">
+        <h3>{{ 'detail.reviews.formTitle' | t }}</h3>
 
-      <button mat-raised-button color="primary" type="submit">
-        <mat-icon>send</mat-icon>
-        Publicar Reseña
-      </button>
-    </form>
-  </section>
+        <mat-form-field appearance="outline" class="review-form__rating">
+          <mat-label>{{ 'detail.reviews.rating' | t }}</mat-label>
+          <mat-select formControlName="rating">
+            @for (value of ratingOptions; track value) {
+              <mat-option [value]="value">{{ 'detail.rating.' + value | t }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-  <!-- Productos relacionados -->
-  <section class="related-section" *ngIf="relatedProducts.length > 0">
-    <h2>
-      <mat-icon>category</mat-icon>
-      También te puede interesar
-    </h2>
-    <div class="related-grid">
-      <mat-card *ngFor="let related of relatedProducts" class="related-card" (click)="goToProduct(related.id)">
-        <img
-          [src]="related.image"
-          [alt]="related.name"
-          (error)="$any($event.target).src='https://placehold.co/300x200/e0e0e0/666?text=Imagen'">
-        <mat-card-content>
-          <h4>{{ related.name }}</h4>
-          <span class="related-price">${{ related.price | number:'1.2-2' }}</span>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  </section>
-</div>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'detail.reviews.comment' | t }}</mat-label>
+          <textarea
+            matInput
+            formControlName="comment"
+            rows="3"
+            [placeholder]="'detail.reviews.placeholder' | t"></textarea>
+          @if (reviewForm.get('comment')?.hasError('required')) {
+            <mat-error>{{ 'errors.required' | t }}</mat-error>
+          } @else if (reviewForm.get('comment')?.hasError('minlength')) {
+            <mat-error>{{ 'errors.minLength' | t: { min: 5 } }}</mat-error>
+          }
+        </mat-form-field>
 
-<div class="loading-container" *ngIf="loading">
-  <mat-icon class="loading-icon">hourglass_empty</mat-icon>
-  <p>Cargando producto...</p>
-</div>
+        <button mat-flat-button type="submit">
+          <mat-icon>send</mat-icon>
+          {{ 'detail.reviews.submit' | t }}
+        </button>
+      </form>
+    </section>
 
-<div class="not-found" *ngIf="!loading && notFound">
-  <mat-icon>search_off</mat-icon>
-  <h2>Producto no encontrado</h2>
-  <p>El producto que buscas no existe o fue eliminado</p>
-  <button mat-raised-button color="primary" routerLink="/products">
-    <mat-icon>storefront</mat-icon>
-    Ver Productos
-  </button>
-</div>
+    <!-- ===================================================== RELACIONADOS -->
+    @if (relatedProducts().length > 0) {
+      <section class="related">
+        <h2>
+          <mat-icon aria-hidden="true">grid_view</mat-icon>
+          {{ 'detail.related.title' | t }}
+        </h2>
+        <div class="related__grid">
+          @for (related of relatedProducts(); track related.id) {
+            <app-product-card [product]="related" (add)="addRelatedToCart($event)" />
+          }
+        </div>
+      </section>
+    }
+  </div>
+}

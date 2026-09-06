@@ -1,6 +1,6 @@
-import { Component, inject, DestroyRef } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,19 +11,26 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { CartService } from '../services/cart.service';
 import { OrderService } from '../services/order.service';
 import { AuthService } from '../services/auth.service';
-import { CartState } from '../models/cart.model';
-import { PaymentMethod } from '../models/order.model';
-import Swal from 'sweetalert2';
 import { CouponService, Coupon } from '../services/coupon.service';
+import { NotificationService } from '../services/notification.service';
+import { TranslationService } from '../services/translation.service';
+import { CartState } from '../models/cart.model';
+import { PAYMENT_METHODS, PaymentMethod } from '../models/order.model';
+import { calculateTotals } from '../models/pricing';
+import { apiErrorMessage } from '../core/api-error';
+import { TranslatePipe } from '../i18n/translate.pipe';
+import { paymentMethodKey, paymentMethodIcon } from '../i18n/catalog-labels';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
   imports: [
-    CommonModule,
+    DecimalPipe,
     FormsModule,
     ReactiveFormsModule,
     MatFormFieldModule,
@@ -33,146 +40,172 @@ import { CouponService, Coupon } from '../services/coupon.service';
     MatSelectModule,
     MatStepperModule,
     MatIconModule,
-    MatDividerModule
+    MatDividerModule,
+    MatProgressSpinnerModule,
+    TranslatePipe,
   ],
   templateUrl: './checkout.html',
   styleUrls: ['./checkout.css'],
 })
 export class Checkout {
-  shippingForm: FormGroup;
-  paymentForm: FormGroup;
-  cartState: CartState = { items: [], total: 0, itemCount: 0 };
-  paymentMethods = Object.values(PaymentMethod);
-  couponCode = '';
-  couponError = '';
-  appliedCoupon: Coupon | null = null;
-
+  private fb = inject(FormBuilder);
+  private cartService = inject(CartService);
+  private orderService = inject(OrderService);
+  private authService = inject(AuthService);
+  private couponService = inject(CouponService);
+  private notifications = inject(NotificationService);
+  private translation = inject(TranslationService);
+  private router = inject(Router);
   private destroyRef = inject(DestroyRef);
-  private orderSubmitted = false; // evita el redirect a /cart justo tras vaciar el carrito al confirmar
 
-  constructor(
-    private fb: FormBuilder,
-    private cartService: CartService,
-    private orderService: OrderService,
-    private authService: AuthService,
-    private couponService: CouponService,
-    private router: Router
-  ) {
+  readonly cartState = signal<CartState>(this.cartService.getState());
+  readonly paymentMethods = PAYMENT_METHODS;
+
+  readonly appliedCoupon = signal<Coupon | null>(null);
+  readonly couponError = signal('');
+  readonly validatingCoupon = signal(false);
+  readonly submitting = signal(false);
+
+  couponCode = '';
+
+  /**
+   * Totales para PINTAR el resumen.
+   *
+   * El importe que se cobra lo recalcula el servidor desde la base de datos al
+   * crear el pedido; esto solo sirve para que el usuario vea el desglose antes
+   * de confirmar. Si los dos no coinciden, manda el servidor.
+   */
+  readonly totals = computed(() =>
+    calculateTotals(this.cartState().subtotal, this.appliedCoupon()?.discountPercent ?? 0),
+  );
+
+  readonly shippingForm: FormGroup;
+  readonly paymentForm: FormGroup;
+
+  constructor() {
+    // No hace falta vigilar el carrito para expulsar al usuario si se vacía:
+    // de eso se encarga `cartNotEmptyGuard` al entrar en la ruta.
     this.cartService.cartState$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(state => {
-        this.cartState = state;
-        if (state.items.length === 0 && !this.orderSubmitted) {
-          this.router.navigate(['/cart']);
-        }
-      });
+      .subscribe(state => this.cartState.set(state));
 
     const user = this.authService.getUser();
 
     this.shippingForm = this.fb.group({
-      name: [user?.name || '', [Validators.required, Validators.minLength(3)]],
-      email: [user?.email || '', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+      name: [user?.name ?? '', [Validators.required, Validators.minLength(3)]],
+      email: [user?.email ?? '', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       address: ['', [Validators.required, Validators.minLength(10)]],
       city: ['', [Validators.required]],
-      postalCode: ['', [Validators.required, Validators.pattern(/^[0-9]{5}$/)]],
+      postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
     });
 
     this.paymentForm = this.fb.group({
-      paymentMethod: [PaymentMethod.CREDIT_CARD, [Validators.required]],
+      paymentMethod: ['CREDIT_CARD' as PaymentMethod, [Validators.required]],
     });
   }
 
-  get discountAmount(): number {
-    if (!this.appliedCoupon) return 0;
-    return this.cartState.total * (this.appliedCoupon.discountPercent / 100);
+  paymentLabel(method: PaymentMethod): string {
+    return paymentMethodKey(method);
   }
 
-  get finalTotal(): number {
-    return this.cartState.total - this.discountAmount;
+  paymentIcon(method: PaymentMethod): string {
+    return paymentMethodIcon(method);
   }
+
+  // ------------------------------------------------------------------ cupón
 
   applyCoupon(): void {
-    this.couponError = '';
-    this.couponService.validate(this.couponCode).subscribe(coupon => {
-      if (coupon) {
-        this.appliedCoupon = coupon;
-      } else {
-        this.couponError = 'Código no válido';
-        this.appliedCoupon = null;
-      }
-    });
+    const code = this.couponCode.trim();
+    if (!code) return;
+
+    this.couponError.set('');
+    this.validatingCoupon.set(true);
+
+    this.couponService
+      .validate(code)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(coupon => {
+        this.validatingCoupon.set(false);
+
+        if (coupon) {
+          this.appliedCoupon.set(coupon);
+        } else {
+          this.appliedCoupon.set(null);
+          this.couponError.set(this.translation.translate('checkout.coupon.invalid'));
+        }
+      });
   }
 
   removeCoupon(): void {
-    this.appliedCoupon = null;
+    this.appliedCoupon.set(null);
     this.couponCode = '';
+    this.couponError.set('');
   }
+
+  // ----------------------------------------------------------------- pedido
 
   submitOrder(): void {
     if (this.shippingForm.invalid || this.paymentForm.invalid) {
       this.shippingForm.markAllAsTouched();
       this.paymentForm.markAllAsTouched();
-      Swal.fire({
-        icon: 'error',
-        title: 'Formulario incompleto',
-        text: 'Por favor completa todos los campos requeridos',
-      });
+      this.notifications.error(
+        this.translation.translate('checkout.error.formTitle'),
+        this.translation.translate('checkout.error.formText'),
+      );
       return;
     }
 
-    if (this.cartState.items.length === 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Carrito vacío',
-        text: 'No hay productos en el carrito',
-      });
+    if (this.cartService.isEmpty()) {
+      void this.router.navigate(['/cart']);
       return;
     }
 
-    const user = this.authService.getUser();
-    if (!user) {
-      Swal.fire({
-        icon: 'error',
-        title: 'No autenticado',
-        text: 'Debes iniciar sesión para completar la compra',
+    this.submitting.set(true);
+
+    this.orderService
+      .createOrder({
+        // Solo qué y cuánto: los precios los pone el servidor.
+        items: this.cartService.toOrderItems(),
+        shippingInfo: this.shippingForm.value,
+        paymentMethod: this.paymentForm.value.paymentMethod,
+        couponCode: this.appliedCoupon()?.code,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: async order => {
+          this.submitting.set(false);
+          this.cartService.clearCart();
+
+          await this.notifications.dialogInfo({
+            title: this.translation.translate('checkout.success.title'),
+            html: `
+              <p>${this.translation.translate('checkout.success.body', { id: order.id })}</p>
+              <p class="dialog-note">${this.translation.translate('checkout.success.delivery', {
+                date: new Date(order.estimatedDelivery).toLocaleDateString(
+                  this.translation.currentLang(),
+                ),
+              })}</p>
+            `,
+            confirmText: this.translation.translate('checkout.success.action'),
+          });
+
+          void this.router.navigate(['/orders']);
+        },
+        error: error => {
+          this.submitting.set(false);
+
+          // El servidor puede rechazar el pedido porque el stock se agotó entre
+          // medias o porque el cupón acaba de caducar. Ese mensaje concreto es
+          // mucho más útil que un "algo ha fallado" genérico.
+          this.notifications.error(
+            this.translation.translate(apiErrorMessage(error, 'checkout.error.failed')),
+          );
+        },
       });
-      this.router.navigate(['/auth']);
-      return;
-    }
-
-    const shippingInfo = this.shippingForm.value;
-    const paymentMethod = this.paymentForm.value.paymentMethod;
-
-    this.orderService.createOrder(
-  user.id,
-  this.cartState.items,
-  shippingInfo,
-  paymentMethod,
-  this.finalTotal
-).subscribe(order => {
-      this.orderSubmitted = true; // marca antes de vaciar el carrito
-
-      Swal.fire({
-        icon: 'success',
-        title: '¡Pedido realizado!',
-        html: `
-          <p>Tu pedido <strong>#${order.id}</strong> ha sido creado exitosamente.</p>
-          <p>Recibirás una confirmación por email.</p>
-          <p><small>Entrega estimada: ${new Date(order.estimatedDelivery).toLocaleDateString()}</small></p>
-        `,
-        confirmButtonText: 'Ver mis pedidos',
-      }).then(() => {
-        this.cartService.clearCart();
-        this.router.navigate(['/orders']);
-      });
-    });
   }
 
-  goBack(): void {
-    this.router.navigate(['/cart']);
+  goBackToCart(): void {
+    void this.router.navigate(['/cart']);
   }
-
-  
 }
-

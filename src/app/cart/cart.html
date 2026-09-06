@@ -1,116 +1,156 @@
-<div class="cart-container">
-  <div class="cart-header">
+<div class="cart">
+  <header class="cart__head">
     <h1>
-      <mat-icon>shopping_cart</mat-icon>
-      Mi Carrito
+      <mat-icon aria-hidden="true">shopping_cart</mat-icon>
+      {{ 'cart.title' | t }}
     </h1>
-    <p *ngIf="cartState.itemCount > 0">
-      Tienes {{ cartState.itemCount }} producto(s) en tu carrito
-    </p>
-  </div>
+    @if (state().itemCount > 0) {
+      <p>{{ 'cart.subtitle' | t: { count: state().itemCount } }}</p>
+    }
+  </header>
 
-  <!-- Empty Cart State -->
-  <div *ngIf="cartState.items.length === 0" class="empty-cart">
-    <mat-icon>shopping_cart</mat-icon>
-    <h2>Tu carrito está vacío</h2>
-    <p>Explora nuestros productos y añade lo que más te guste</p>
-    <button mat-raised-button color="primary" (click)="continueShopping()">
-      <mat-icon>storefront</mat-icon>
-      Ver Productos
-    </button>
-  </div>
-
-  <!-- Cart with Items -->
-  <div *ngIf="cartState.items.length > 0" class="cart-content">
-    <div class="cart-items">
-      <mat-card *ngFor="let item of cartState.items" class="cart-item-card">
-        <div class="item-image">
-          <img [src]="item.image" [alt]="item.name" (error)="$any($event.target).src='https://placehold.co/400x300/e0e0e0/666?text=Imagen+No+Disponible'" loading="lazy">
-        </div>
-        
-        <div class="item-details">
-          <h3>{{ item.name }}</h3>
-          <p class="item-price">${{ item.price | number:'1.2-2' }} <span>c/u</span></p>
-          <p class="item-stock">Stock disponible: {{ item.stock }}</p>
-        </div>
-
-        <div class="item-actions">
-          <div class="quantity-controls">
-            <button mat-icon-button (click)="decreaseQuantity(item)" class="quantity-btn">
-              <mat-icon>remove</mat-icon>
-            </button>
-            <span class="quantity">{{ item.quantity }}</span>
-            <button 
-              mat-icon-button 
-              (click)="increaseQuantity(item)" 
-              [disabled]="item.quantity >= item.stock"
-              class="quantity-btn">
-              <mat-icon>add</mat-icon>
-            </button>
-          </div>
-          
-          <div class="item-total">
-            <span class="label">Subtotal:</span>
-            <span class="amount">${{ (item.price * item.quantity) | number:'1.2-2' }}</span>
-          </div>
-
-          <button mat-icon-button color="warn" (click)="removeItem(item)" class="remove-btn">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </div>
-      </mat-card>
+  @if (state().items.length === 0) {
+    <div class="empty-state">
+      <mat-icon>remove_shopping_cart</mat-icon>
+      <h2>{{ 'cart.empty.title' | t }}</h2>
+      <p>{{ 'cart.empty.subtitle' | t }}</p>
+      <button mat-flat-button (click)="continueShopping()">
+        <mat-icon>storefront</mat-icon>
+        {{ 'cart.empty.action' | t }}
+      </button>
     </div>
+  } @else {
+    <div class="cart__layout">
+      <!-- ------------------------------------------------------- Artículos -->
+      <ul class="cart__items">
+        @for (item of state().items; track item.id) {
+          <li>
+            <mat-card class="item">
+              <button
+                type="button"
+                class="item__image"
+                (click)="goToProduct(item)"
+                [attr.aria-label]="'products.card.viewDetail' | t: { name: item.name }">
+                <img [src]="item.image" [alt]="item.name" loading="lazy" />
+              </button>
 
-    <!-- Cart Summary -->
-    <div class="cart-summary">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Resumen del Pedido</mat-card-title>
-        </mat-card-header>
+              <div class="item__info">
+                <h2>{{ item.name }}</h2>
+                <p class="item__price">
+                  ${{ item.price | number: '1.2-2' }}
+                  <span>{{ 'common.each' | t }}</span>
+                </p>
+                <p class="item__stock">{{ 'cart.item.stock' | t: { count: item.stock } }}</p>
+              </div>
 
-        <mat-card-content>
-          <div class="summary-row">
-            <span>Productos ({{ cartState.itemCount }}):</span>
-            <span>${{ cartState.total | number:'1.2-2' }}</span>
+              <div class="item__controls">
+                <div class="qty" role="group" [attr.aria-label]="'common.quantity' | t">
+                  <button
+                    mat-icon-button
+                    (click)="decreaseQuantity(item)"
+                    [attr.aria-label]="'cart.item.decrease' | t">
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                  <span class="qty__value" aria-live="polite">{{ item.quantity }}</span>
+                  <button
+                    mat-icon-button
+                    (click)="increaseQuantity(item)"
+                    [disabled]="item.quantity >= item.stock"
+                    [attr.aria-label]="'cart.item.increase' | t">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
+
+                <p class="item__subtotal">
+                  <span>{{ 'cart.item.subtotal' | t }}</span>
+                  <strong>${{ item.price * item.quantity | number: '1.2-2' }}</strong>
+                </p>
+
+                <button
+                  mat-icon-button
+                  class="item__remove"
+                  (click)="removeItem(item)"
+                  [matTooltip]="'cart.item.remove' | t"
+                  [attr.aria-label]="'cart.item.remove' | t">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            </mat-card>
+          </li>
+        }
+      </ul>
+
+      <!-- --------------------------------------------------------- Resumen -->
+      <aside class="cart__summary">
+        <mat-card>
+          <h2 class="summary__title">{{ 'cart.summary.title' | t }}</h2>
+
+          <div class="summary__row">
+            <span>{{ 'cart.summary.products' | t: { count: state().itemCount } }}</span>
+            <span>${{ state().subtotal | number: '1.2-2' }}</span>
           </div>
-          
-          <div class="summary-row">
-            <span>Envío:</span>
-            <span class="free">GRATIS</span>
+
+          <div class="summary__row">
+            <span>{{ 'cart.summary.shipping' | t }}</span>
+            <!--
+              El envío ya no dice "GRATIS" siempre: se calcula con la misma
+              regla que anuncia la portada (gratis a partir de $100).
+            -->
+            @if (state().shippingCost === 0) {
+              <span class="free">{{ 'common.free' | t }}</span>
+            } @else {
+              <span>${{ state().shippingCost | number: '1.2-2' }}</span>
+            }
+          </div>
+
+          <div class="shipping-progress">
+            @if (state().amountToFreeShipping > 0) {
+              <p>
+                <mat-icon aria-hidden="true">local_shipping</mat-icon>
+                {{
+                  'cart.summary.freeShippingHint'
+                    | t: { amount: state().amountToFreeShipping.toFixed(2) }
+                }}
+              </p>
+            } @else {
+              <p class="reached">
+                <mat-icon aria-hidden="true">check_circle</mat-icon>
+                {{ 'cart.summary.freeShippingReached' | t }}
+              </p>
+            }
+            <div
+              class="progress"
+              role="progressbar"
+              [attr.aria-valuenow]="freeShippingProgress()"
+              aria-valuemin="0"
+              aria-valuemax="100">
+              <span [style.width.%]="freeShippingProgress()"></span>
+            </div>
           </div>
 
           <mat-divider></mat-divider>
 
-          <div class="summary-row total">
-            <span>Total:</span>
-            <span>${{ cartState.total | number:'1.2-2' }}</span>
+          <div class="summary__row summary__row--total">
+            <span>{{ 'cart.summary.total' | t }}</span>
+            <span>${{ state().total | number: '1.2-2' }}</span>
           </div>
 
-          <div class="savings-badge" *ngIf="cartState.total > 100">
-            <mat-icon>local_offer</mat-icon>
-            <span>¡Envío gratis en compras mayores a $100!</span>
+          <div class="summary__actions">
+            <button mat-flat-button class="checkout-btn" (click)="goToCheckout()">
+              <mat-icon>lock</mat-icon>
+              {{ 'cart.actions.checkout' | t }}
+            </button>
+            <button mat-stroked-button (click)="continueShopping()">
+              <mat-icon>arrow_back</mat-icon>
+              {{ 'cart.actions.continue' | t }}
+            </button>
+            <button mat-button class="clear-btn" (click)="clearCart()">
+              <mat-icon>delete_sweep</mat-icon>
+              {{ 'cart.actions.clear' | t }}
+            </button>
           </div>
-        </mat-card-content>
-
-        <mat-card-actions>
-          <button 
-            mat-raised-button 
-            color="primary" 
-            (click)="goToCheckout()"
-            class="checkout-btn">
-            <mat-icon>payment</mat-icon>
-            Proceder al Pago
-          </button>
-          <button mat-stroked-button (click)="continueShopping()" class="continue-btn">
-            <mat-icon>arrow_back</mat-icon>
-            Seguir Comprando
-          </button>
-          <button mat-button color="warn" (click)="clearCart()" class="clear-btn">
-            <mat-icon>delete_sweep</mat-icon>
-            Vaciar Carrito
-          </button>
-        </mat-card-actions>
-      </mat-card>
+        </mat-card>
+      </aside>
     </div>
-  </div>
+  }
 </div>

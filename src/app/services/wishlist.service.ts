@@ -1,69 +1,73 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
+/**
+ * Favoritos en el servidor.
+ *
+ * Se guarda un `BehaviorSubject` con los identificadores para que la interfaz
+ * pinte los corazones al instante, pero la lista buena es la que devuelve la
+ * API: cada operacion responde con el estado completo y con eso se refresca.
+ * Asi la lista sigue al usuario entre navegadores, que era justo lo que no
+ * hacia cuando vivia en localStorage.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class WishlistService {
-  private wishlistSubject = new BehaviorSubject<number[]>([]);
-  public wishlist$ = this.wishlistSubject.asObservable();
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
+  private readonly baseUrl = `${environment.apiUrl}/wishlist`;
 
-  constructor(private authService: AuthService) {
-    this.loadWishlist();
-    
-    // Subscribe to auth changes
-    this.authService.authState$.subscribe(state => {
-      if (state.user) {
-        this.wishlistSubject.next(state.user.wishlist || []);
+  private idsSubject = new BehaviorSubject<number[]>([]);
+  public wishlist$ = this.idsSubject.asObservable();
+
+  constructor() {
+    // Al entrar se carga y al salir se vacia. Sin esto, los favoritos de quien
+    // cerro sesion se quedaban pintados para el siguiente.
+    this.auth.authState$.subscribe(state => {
+      if (state.isAuthenticated) {
+        this.refresh();
       } else {
-        this.wishlistSubject.next([]);
+        this.idsSubject.next([]);
       }
     });
   }
 
-  private loadWishlist(): void {
-    const user = this.authService.getUser();
-    if (user) {
-      this.wishlistSubject.next(user.wishlist || []);
-    }
+  refresh(): void {
+    this.http
+      .get<number[]>(this.baseUrl)
+      .pipe(catchError(() => of([])))
+      .subscribe(ids => this.idsSubject.next(ids));
   }
 
-  addToWishlist(productId: number): void {
-    const currentWishlist = this.wishlistSubject.value;
-    
-    if (!currentWishlist.includes(productId)) {
-      const newWishlist = [...currentWishlist, productId];
-      this.wishlistSubject.next(newWishlist);
-      this.authService.updateUserWishlist(newWishlist);
-    }
+  add(productId: number): Observable<number[]> {
+    return this.http
+      .post<number[]>(`${this.baseUrl}/${productId}`, {})
+      .pipe(tap(ids => this.idsSubject.next(ids)));
   }
 
-  removeFromWishlist(productId: number): void {
-    const currentWishlist = this.wishlistSubject.value;
-    const newWishlist = currentWishlist.filter(id => id !== productId);
-    this.wishlistSubject.next(newWishlist);
-    this.authService.updateUserWishlist(newWishlist);
+  remove(productId: number): Observable<number[]> {
+    return this.http
+      .delete<number[]>(`${this.baseUrl}/${productId}`)
+      .pipe(tap(ids => this.idsSubject.next(ids)));
   }
 
-  toggleWishlist(productId: number): void {
-    if (this.isInWishlist(productId)) {
-      this.removeFromWishlist(productId);
-    } else {
-      this.addToWishlist(productId);
-    }
+  /** Alterna y devuelve si el producto ha quedado en favoritos. */
+  toggle(productId: number): Observable<boolean> {
+    const willAdd = !this.isInWishlist(productId);
+    const request = willAdd ? this.add(productId) : this.remove(productId);
+
+    return request.pipe(map(() => willAdd));
   }
 
   isInWishlist(productId: number): boolean {
-    return this.wishlistSubject.value.includes(productId);
+    return this.idsSubject.value.includes(productId);
   }
 
-  clearWishlist(): void {
-    this.wishlistSubject.next([]);
-    this.authService.updateUserWishlist([]);
-  }
-
-  getWishlistCount(): number {
-    return this.wishlistSubject.value.length;
+  getIds(): number[] {
+    return this.idsSubject.value;
   }
 }

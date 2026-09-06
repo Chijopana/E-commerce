@@ -1,0 +1,29 @@
+# Despliegue en Render (https://render.com) desde la raiz del repositorio.
+#
+#   New > Blueprint > apunta a este repositorio
+#
+# Ojo con SQLite en el plan gratuito: el disco es efimero y la base de datos se
+# borra en cada despliegue. Vale para enseñar la demo; para algo serio, crea una
+# Postgres gratuita en Render y:
+#   1. cambia `provider` a "postgresql" en prisma/schema.prisma
+#   2. pon aqui la DATABASE_URL que te de Render
+#   3. `npx prisma migrate dev --name postgres` para regenerar las migraciones
+services:
+  - type: web
+    name: mini-ecommerce-api
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: JWT_SECRET
+        # Render genera un valor aleatorio y no queda escrito en el repositorio.
+        generateValue: true
+      - key: DATABASE_URL
+        value: file:./prod.db
+      - key: PORT
+        value: 3000
+      - key: CORS_ORIGINS
+        # Cambialo por la URL real de tu frontend en GitHub Pages.
+        value: https://chijopana.github.io
