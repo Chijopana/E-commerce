@@ -6,9 +6,15 @@ const prisma = new PrismaClient();
 /**
  * Datos de arranque.
  *
+ * Vive dentro de `src/` a propósito: así se compila a `dist/` y el contenedor
+ * puede ejecutarlo sin arrastrar `ts-node` a la imagen de producción. El
+ * `Dockerfile` lo lanza en cada arranque, después de las migraciones.
+ *
  * Es idempotente: usa `upsert` en todo, así que se puede ejecutar las veces
- * que haga falta sin duplicar catálogo ni reventar contra índices únicos.
- * El stock sí se restablece, para poder dejar la demo como recién instalada.
+ * que haga falta sin duplicar catálogo ni chocar contra índices únicos. El
+ * stock NO se toca si el producto ya existe, para no deshacer las compras
+ * reales cada vez que el servidor se reinicia. Para dejarlo todo como recién
+ * instalado está `npm run db:reset`.
  */
 
 const CATEGORIES = {
@@ -175,12 +181,14 @@ async function main(): Promise<void> {
 
   // --- Catálogo --------------------------------------------------------
   for (const product of products) {
+    const { stock, ...withoutStock } = product;
+
     await prisma.product.upsert({
       where: { id: product.id },
-      // El stock se restablece a propósito: así `npm run seed` deja la tienda
-      // como recién instalada aunque se hayan hecho compras.
-      update: { ...product },
-      create: { ...product },
+      // Sin `stock`: si el producto ya existe, se refrescan nombre, precio o
+      // imagen, pero las unidades vendidas siguen descontadas.
+      update: withoutStock,
+      create: product,
     });
   }
 

@@ -1,11 +1,14 @@
 /**
  * Configuracion de produccion.
  *
- * `apiUrl` se sustituye al desplegar. Si el backend acaba en otro dominio
- * (Render, Railway, Fly...), es el unico valor que hay que cambiar aqui, y
- * ese origen debe estar en el CORS_ORIGINS del servidor.
+ * Apunta a la API desplegada en Render. Si cambia de dominio, este es el unico
+ * valor que hay que tocar aqui — y el nuevo origen del frontend tiene que estar
+ * en la variable CORS_ORIGINS del servidor, o el navegador bloqueara todo.
+ *
+ * Aviso sobre el plan gratuito de Render: el servicio se duerme tras un rato
+ * sin uso y la primera peticion puede tardar cerca de un minuto en despertarlo.
  */
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:3000/api',
+  apiUrl: 'https://mini-ecommerce-api-ylh8.onrender.com/api',
 };

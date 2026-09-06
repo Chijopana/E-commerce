@@ -20,7 +20,7 @@ export default function globalSetup(): void {
   };
 
   execSync('npx prisma migrate deploy', { cwd: join(__dirname, '..'), env, stdio: 'ignore' });
-  execSync('npx ts-node prisma/seed.ts', { cwd: join(__dirname, '..'), env, stdio: 'ignore' });
+  execSync('npx ts-node src/prisma/seed.ts', { cwd: join(__dirname, '..'), env, stdio: 'ignore' });
 
   // Las variables tienen que seguir puestas cuando arranque la aplicacion.
   process.env['DATABASE_URL'] = 'file:./test.db';
