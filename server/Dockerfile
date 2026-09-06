@@ -25,6 +25,10 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
 
-# Las migraciones se aplican al arrancar: asi un despliegue nuevo levanta con
-# el esquema al dia sin un paso manual.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Al arrancar: migraciones y datos de arranque, luego el servidor.
+#
+# El seed va aqui porque en el plan gratuito de Render el disco es efimero: la
+# base de datos se pierde en cada reinicio y sin esto la tienda levantaria
+# vacia (sin catalogo y sin la cuenta demo). Es idempotente y no toca el stock
+# de los productos que ya existan, asi que repetirlo no rompe nada.
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main.js"]

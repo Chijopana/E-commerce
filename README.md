@@ -48,7 +48,8 @@ Abre <http://localhost:4200>.
 | `server/` | `npm run dev` | API con recarga automática |
 | `server/` | `npm test` | Tests unitarios (8) |
 | `server/` | `npm run test:e2e` | Tests de integración contra base de datos (31) |
-| `server/` | `npm run db:reset` | Vuelve a dejar la tienda como recién instalada |
+| `server/` | `npm run seed` | Asegura catálogo, cuenta demo y cupones (no toca el stock ya vendido) |
+| `server/` | `npm run db:reset` | Borra todo y vuelve a dejar la tienda como recién instalada |
 | `server/` | `npm run prisma:studio` | Explorador visual de la base de datos |
 
 ---
@@ -192,17 +193,24 @@ servidor**: GitHub Pages solo sirve ficheros.
    *New > Blueprint* apuntando a este repositorio. Ajusta `CORS_ORIGINS` a la URL
    de tu frontend.
 
-   Aviso: en el plan gratuito el disco es efímero y la base SQLite se borra en
-   cada despliegue. Para algo permanente, crea una Postgres gratuita, cambia
-   `provider` a `postgresql` en `prisma/schema.prisma` y regenera las migraciones.
+   El contenedor aplica las migraciones **y siembra los datos** en cada arranque
+   (ver el `CMD` del `Dockerfile`). Hace falta porque en el plan gratuito el
+   disco es efímero: sin eso, la tienda levantaría sin catálogo y sin la cuenta
+   demo. El seed es idempotente y no toca el stock de lo que ya exista.
 
-2. **Apunta el frontend a esa URL** en `src/environments/environment.ts`.
+   Para algo permanente, crea una Postgres gratuita en Render, cambia `provider`
+   a `postgresql` en `prisma/schema.prisma` y regenera las migraciones.
+
+2. **Apunta el frontend a esa URL** en `src/environments/environment.ts`
+   (ya está puesta la del despliegue actual).
 
 3. **Publica la web:** `npm run deploy` (build con `--base-href=/E-commerce/` y
    subida a la rama `gh-pages`).
 
-Mientras la API no esté desplegada, la versión publicada mostrará el catálogo
-vacío con un aviso de "sin conexión con la tienda". En local funciona todo.
+Dos cosas del plan gratuito de Render que conviene saber: el servicio **se
+duerme tras un rato sin uso**, así que la primera visita puede tardar cerca de
+un minuto en cargar el catálogo; y al despertar, la base de datos vuelve a los
+datos de ejemplo.
 
 ---
 
